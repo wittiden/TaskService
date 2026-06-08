@@ -14,3 +14,6 @@ class ServerConfig(BaseSettings):
     SERVER_GUNICORN_ACCESS_LOG: str | None
 
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='UTF-8', extra='ignore')
+
+
+server_config = ServerConfig()
