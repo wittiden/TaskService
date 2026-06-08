@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from dishka.integrations.fastapi import setup_dishka
 
-from app.common.bootstrap.middlewares import setup_middlewares
-from app.common.bootstrap.routers import setup_routers
+from app.bootstrap.middlewares import setup_middlewares
+from app.bootstrap.routers import setup_routers
 from app.di.container import async_container
 from app.infrastructure.http.lifespan import lifespan
 from app.infrastructure.http.middleware.cors.config import CORSConfig
