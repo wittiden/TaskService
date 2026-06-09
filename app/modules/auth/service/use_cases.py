@@ -12,7 +12,7 @@ from app.common.security.pass_utils import verify_pass
 from app.infrastructure.database.models import UserModel
 from app.modules.auth.contracts.dtos import TokensInfoDTO, FullRefreshTokenInfoDTO
 from app.modules.auth.exceptions import InvalidTokenVersionError, ForbiddenError, RevokedTokenError, TokenInvalidError, \
-    ExpiredTokenError, InvalidTokenAudienceError, TokenSecurityLimitError, TokenRetentionPeriodError
+    ExpiredTokenError, InvalidTokenAudienceError, TokenRetentionPeriodError
 from app.modules.auth.repository.commands import RefreshTokenCommandsRepository
 from app.modules.auth.repository.queries import RefreshTokenQueriesRepository
 from app.modules.auth.service.guards import AuthGuards
