@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import DateTime, Enum, String, Boolean, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.common.emums.users import UserRoleEnum
+from app.common.enums.users import UserRoleEnum
 from app.infrastructure.database.base import Base
 
 

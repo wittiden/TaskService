@@ -2,7 +2,7 @@ from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
-from app.common.emums.users import UserRoleEnum
+from app.common.enums.users import UserRoleEnum
 
 
 class SecurityUserInfoDTO(BaseModel):

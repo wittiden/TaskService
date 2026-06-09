@@ -1,7 +1,7 @@
 from datetime import datetime, UTC
 from sqlalchemy.exc import IntegrityError
 
-from app.common.emums.users import UserRoleEnum
+from app.common.enums.users import UserRoleEnum
 from app.common.security.pass_utils import hash_pass
 from app.infrastructure.database.models import UserModel
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO

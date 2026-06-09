@@ -8,6 +8,7 @@ pydantic[email]~=2.13.4
 pydantic-settings~=2.14.1
 
 #auth
+pyjwt[crypto]~=2.13.0
 bcrypt~=5.0.0
 
 #api
