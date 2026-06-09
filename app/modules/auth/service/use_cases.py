@@ -18,7 +18,7 @@ from app.modules.auth.repository.queries import RefreshTokenQueriesRepository
 from app.modules.auth.service.guards import AuthGuards
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.guards import UserGuards
-from refresh_token import RefreshTokenModel
+from app.infrastructure.database.models.refresh_token import RefreshTokenModel
 
 
 class ManageTokenCase:

@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from refresh_token import RefreshTokenModel
+from app.infrastructure.database.models.refresh_token import RefreshTokenModel
 
 
 class RefreshTokenCommandsRepository:

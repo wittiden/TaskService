@@ -10,6 +10,9 @@ class MiddlewareLogger(BaseHTTPMiddleware):
     """Middleware для логирования"""
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        if not request.url.path.startswith('/api/v1'):
+            return await call_next(request)
+
         start_time = perf_counter()
         request_id = str(uuid4())
         request.state.request_id = request_id

@@ -1,6 +1,6 @@
 from app.common.enums.auth import TokenTypeEnum
 from app.modules.auth.exceptions import InvalidTokenTypeError, TokenNotFoundError
-from refresh_token import RefreshTokenModel
+from app.infrastructure.database.models.refresh_token import RefreshTokenModel
 
 
 class AuthGuards:

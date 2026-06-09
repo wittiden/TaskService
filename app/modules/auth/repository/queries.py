@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from refresh_token import RefreshTokenModel
+from app.infrastructure.database.models.refresh_token import RefreshTokenModel
 
 
 class RefreshTokenQueriesRepository:
