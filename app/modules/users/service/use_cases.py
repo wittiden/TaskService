@@ -1,4 +1,5 @@
 from datetime import datetime, UTC, timedelta
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -7,7 +8,7 @@ from app.common.enums.users import UserRoleEnum
 from app.common.security.pass_utils import hash_pass
 from app.infrastructure.database.models import UserModel
 from app.modules.auth.service.use_cases import AuthUserCase
-from app.modules.users.contracts.dtos import SecurityUserInfoDTO
+from app.modules.users.contracts.dtos import SecurityUserInfoDTO, FullUserInfoDTO
 from app.modules.users.exceptions import EmailIsExistError, UserDeletionGracePeriodError, UserAlreadyClosedError, \
     UserAlreadyBlockedError, UserAlreadyUnBlockedError
 from app.modules.users.repository.commands import UserCommandsRepository
@@ -52,6 +53,19 @@ class CreateUserCase:
 class UpdateUserCase:
     """Кейс по обновлению данных пользователей"""
 
+    def __init__(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository) -> None:
+        self._user_commands = user_commands
+        self._user_queries = user_queries
+
+    async def partial_user_data(self, current_user: UserModel, new_data: dict[str, Any]) -> SecurityUserInfoDTO:
+        current_user = UserGuards.require_user_is_exist(current_user)
+
+        if 'password' in new_data:
+            new_data['password_hash'] = hash_pass(new_data.pop('password'))
+
+        user = await self._user_commands.alter_user_info(current_user, new_data)
+        return SecurityUserInfoDTO.model_validate(user)
+
 
 class DeleteUserCase:
     """Кейс по удалению пользователей"""
@@ -93,6 +107,27 @@ class DeleteUserCase:
 class ShowUserCase:
     """Кейс по показу данных пользователей"""
 
+    def __init__(self, user_queries: UserQueriesRepository) -> None:
+        self._user_queries = user_queries
+
+    async def show_users(self, limit: int = 100, offset: int = 0) -> list[FullUserInfoDTO]:
+        objs = await self._user_queries.select_users(limit, offset)
+        return [FullUserInfoDTO.model_validate(obj) for obj in objs]
+
+    async def show_my_user(self, current_user: UserModel) -> SecurityUserInfoDTO:
+        obj = await self._user_queries.select_user(current_user)
+        obj = UserGuards.require_user_is_exist(obj)
+        return SecurityUserInfoDTO.model_validate(obj)
+
+    async def show_user_by_id(self, user_id: UUID) -> FullUserInfoDTO:
+        obj = await self._user_queries.select_user_by_id(user_id)
+        obj = UserGuards.require_user_is_exist(obj)
+        return FullUserInfoDTO.model_validate(obj)
+
+    async def show_user_by_email(self, email: str) -> SecurityUserInfoDTO:
+        obj = await self._user_queries.select_user_by_email(email)
+        obj = UserGuards.require_user_is_exist(obj)
+        return SecurityUserInfoDTO.model_validate(obj)
 
 class ManageUserCase:
     """Кейс по менедженгу данных пользователей"""
