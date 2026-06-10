@@ -10,7 +10,7 @@ from app.modules.auth.contracts.schemas import LoginUserSchema, RefreshSchema
 from app.modules.auth.service.use_cases import AuthUserCase, ShowRefreshTokenCase, DeleteRefreshTokenCase
 
 auth_router = APIRouter(prefix='/api/v1/auth', tags=['auth'])
-admin_refresh_tokens_router = APIRouter(prefix='/api/v1/admin/refresh-tokens', tags=['refresh-tokens'])
+admin_refresh_tokens_router = APIRouter(prefix='/api/v1/admin/refresh-tokens', tags=['admin-refresh-tokens'])
 
 
 @auth_router.post('/login', response_model=TokensInfoDTO, summary='Login user')
