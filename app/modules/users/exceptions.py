@@ -49,3 +49,8 @@ class ClosedUserError(UserRouterError):
 class BlockedUserError(UserRouterError):
     status_code = 409
     title = 'Blocked user error'
+
+
+class SamePasswordsError(UserRouterError):
+    status_code = 409
+    title = 'Same passwords error'

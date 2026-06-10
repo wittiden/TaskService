@@ -5,12 +5,12 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.users import UserRoleEnum
-from app.common.security.pass_utils import hash_pass
+from app.common.security.pass_utils import hash_pass, verify_pass
 from app.infrastructure.database.models import UserModel
 from app.modules.auth.service.use_cases import AuthUserCase
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO, FullUserInfoDTO
 from app.modules.users.exceptions import EmailIsExistError, UserDeletionGracePeriodError, UserAlreadyClosedError, \
-    UserAlreadyBlockedError, UserAlreadyUnBlockedError
+    UserAlreadyBlockedError, UserAlreadyUnBlockedError, SamePasswordsError
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.guard_config import UserGuardConfig
@@ -58,10 +58,20 @@ class UpdateUserCase:
         self._user_queries = user_queries
 
     async def partial_user_data(self, current_user: UserModel, new_data: dict[str, Any]) -> SecurityUserInfoDTO:
+        now = datetime.now(UTC)
+
         current_user = UserGuards.require_user_is_exist(current_user)
 
         if 'password' in new_data:
+            if verify_pass(new_data['password'], current_user.password_hash):
+                raise SamePasswordsError('Same passwords error')
+
             new_data['password_hash'] = hash_pass(new_data.pop('password'))
+
+        if all(x is None for x in new_data.values()):
+            return SecurityUserInfoDTO.model_validate(current_user)
+
+        new_data['updated_at'] = now
 
         user = await self._user_commands.alter_user_info(current_user, new_data)
         return SecurityUserInfoDTO.model_validate(user)
