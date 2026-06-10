@@ -194,13 +194,17 @@ class CurrentUserCase:
         self._user_queries = user_queries
         self._manage_token_case = manage_token_case
 
-    async def _current(self, access_token: str, require_admin: bool = False) -> UserModel:
+    async def _current(self, access_token: str, require_admin: bool = False, require_vip: bool = False) -> UserModel:
         payload = self._manage_token_case.decode_access_token(access_token)
         token_type = payload['token_type']
         AuthGuards.require_access_token_type(token_type)
 
         if require_admin:
             if not payload['role'] == UserRoleEnum.ADMIN:
+                raise ForbiddenError('Invalid user role error')
+
+        if require_vip:
+            if payload['role'] not in (UserRoleEnum.ADMIN, UserRoleEnum.VIP_USER):
                 raise ForbiddenError('Invalid user role error')
 
         user_id = payload['sub']
@@ -212,8 +216,11 @@ class CurrentUserCase:
     async def show_current_user(self, access_token: str) -> UserModel:
         return await self._current(access_token)
 
+    async def show_current_vip(self, access_token: str) -> UserModel:
+        return await self._current(access_token, require_vip=True)
+
     async def show_current_admin(self, access_token: str) -> UserModel:
-        return await self._current(access_token, True)
+        return await self._current(access_token, require_admin=True)
 
 
 class ShowRefreshTokenCase:

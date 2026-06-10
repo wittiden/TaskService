@@ -24,5 +24,11 @@ async def get_current_admin(service: FromDishka[CurrentUserCase], token: str = D
     return await service.show_current_admin(token)
 
 
+@inject
+async def get_current_vip(service: FromDishka[CurrentUserCase], token: str = Depends(get_token)) -> UserModel:
+    return await service.show_current_vip(token)
+
+
 CurrentUser = Annotated[UserModel, Depends(get_current_user)]
 CurrentAdmin = Annotated[UserModel, Depends(get_current_admin)]
+CurrentVip = Annotated[UserModel, Depends(get_current_vip)]
