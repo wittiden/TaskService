@@ -82,12 +82,14 @@ async def show_my_user_endpoint(request: Request, current_user: CurrentUser, ser
 
 
 @admin_users_router.patch('/block/{user_id}', summary='Block user')
+@limiter.shared_limit('20/minute', scope='manage_user_case')
 @inject
 async def block_user_endpoint(request: Request, current_admin: CurrentAdmin, user_id: UUID, service: FromDishka[ManageUserCase]) -> None:
     await service.block_user(user_id)
 
 
 @admin_users_router.patch('/unblock/{user_id}', summary='Unblock user')
+@limiter.shared_limit('20/minute', scope='manage_user_case')
 @inject
 async def unblock_user_endpoint(request: Request, current_admin: CurrentAdmin, user_id: UUID, service: FromDishka[ManageUserCase]) -> None:
     await service.unblock_user(user_id)

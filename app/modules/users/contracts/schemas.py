@@ -12,6 +12,6 @@ class CreateUserSchema(BaseModel):
 class UpdateUserSchema(BaseModel):
     """Схема по обновлению данных пользователя"""
 
-    name: str | None = Field(default=None)
-    email: EmailStr | None = Field(default=None)
-    password: str | None = Field(default=None)
+    name: str | None = Field(default=None, examples=[None])
+    email: EmailStr | None = Field(default=None, examples=[None])
+    password: str | None = Field(default=None, examples=[None])

@@ -54,13 +54,13 @@ async def show_revoked_refresh_tokens_endpoint(request: Request, current_admin: 
 
 @admin_refresh_tokens_router.get('/by-id/{refresh_token_id}', response_model=FullRefreshTokenInfoDTO, summary='Show refresh token by id')
 @inject
-async def show_refresh_token_by_id_endpoint(request: Request, current_admin: CurrentAdmin, refresh_token_id: UUID, service: FromDishka[ShowRefreshTokenCase], limit: int = 100, offset: int = 0) -> FullRefreshTokenInfoDTO:
+async def show_refresh_token_by_id_endpoint(request: Request, current_admin: CurrentAdmin, refresh_token_id: UUID, service: FromDishka[ShowRefreshTokenCase]) -> FullRefreshTokenInfoDTO:
     return await service.show_refresh_token_by_id(refresh_token_id)
 
 
 @admin_refresh_tokens_router.get('/by-user-id/{user_id}', response_model=list[FullRefreshTokenInfoDTO], summary='Show refresh tokens by user id')
 @inject
-async def show_refresh_tokens_by_user_id_endpoint(request: Request, current_admin: CurrentAdmin, user_id: UUID, service: FromDishka[ShowRefreshTokenCase], limit: int = 100, offset: int = 0) -> list[FullRefreshTokenInfoDTO]:
+async def show_refresh_tokens_by_user_id_endpoint(request: Request, current_admin: CurrentAdmin, user_id: UUID, service: FromDishka[ShowRefreshTokenCase]) -> list[FullRefreshTokenInfoDTO]:
     return await service.show_refresh_tokens_by_user_id(user_id)
 
 
