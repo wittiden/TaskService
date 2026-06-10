@@ -10,7 +10,9 @@ from app.modules.auth.service.use_cases import ManageTokenCase, AuthUserCase, Cu
     DeleteRefreshTokenCase
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
-from app.modules.users.service.use_cases import CreateUserCase
+from app.modules.users.service.guard_config import UserGuardConfig
+from app.modules.users.service.use_cases import CreateUserCase, UpdateUserCase, DeleteUserCase, ShowUserCase, \
+    ManageUserCase
 
 
 class DatabaseConfigProvider(Provider):
@@ -115,6 +117,14 @@ class AuthCasesProvider(Provider):
         return DeleteRefreshTokenCase(refresh_token_queries, refresh_token_commands, jwt_config)
 
 
+class UserGuardConfigProvider(Provider):
+    """Провайдер по созданию конфигурации бизнес правил пользователей"""
+
+    @provide(scope=Scope.APP)
+    def user_guard_config(self) -> UserGuardConfig:
+        return UserGuardConfig()
+
+
 class UserCasesProvider(Provider):
     """Провайдер по созданию кейсов пользователя"""
 
@@ -123,6 +133,22 @@ class UserCasesProvider(Provider):
     @provide
     def create_user_case(self, user_commands: UserCommandsRepository) -> CreateUserCase:
         return CreateUserCase(user_commands)
+
+    @provide
+    def update_user_case(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository) -> UpdateUserCase:
+        return UpdateUserCase(user_commands, user_queries)
+
+    @provide
+    def delete_user_case(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, user_guard_config: UserGuardConfig, auth_user_case: AuthUserCase) -> DeleteUserCase:
+        return DeleteUserCase(user_commands, user_queries, user_guard_config, auth_user_case)
+
+    @provide
+    def show_user_case(self, user_queries: UserQueriesRepository) -> ShowUserCase:
+        return ShowUserCase(user_queries)
+
+    @provide
+    def manage_user_case(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, auth_user_case: AuthUserCase) -> ManageUserCase:
+        return ManageUserCase(user_commands, user_queries, auth_user_case)
 
 
 def create_async_container() -> AsyncContainer:
@@ -135,6 +161,7 @@ def create_async_container() -> AsyncContainer:
         CommandsRepositoryProvider(),
         QueriesRepositoryProvider(),
         AuthCasesProvider(),
+        UserGuardConfigProvider(),
         UserCasesProvider(),
     )
 
