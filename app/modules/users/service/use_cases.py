@@ -1,13 +1,18 @@
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
+from uuid import UUID
+
 from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.users import UserRoleEnum
 from app.common.security.pass_utils import hash_pass
 from app.infrastructure.database.models import UserModel
+from app.modules.auth.service.use_cases import AuthUserCase
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO
-from app.modules.users.exceptions import EmailIsExistError
+from app.modules.users.exceptions import EmailIsExistError, UserDeletionGracePeriodError, UserAlreadyClosedError, \
+    UserAlreadyBlockedError, UserAlreadyUnBlockedError
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
+from app.modules.users.service.guard_config import UserGuardConfig
 from app.modules.users.service.guards import UserGuards
 
 
@@ -51,13 +56,75 @@ class UpdateUserCase:
 class DeleteUserCase:
     """Кейс по удалению пользователей"""
 
+    def __init__(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, user_guard_config: UserGuardConfig, auth_user_case: AuthUserCase) -> None:
+        self._user_commands = user_commands
+        self._user_queries = user_queries
+        self._user_guard_config = user_guard_config
+        self._auth_user_case = auth_user_case
+
+    async def close_user(self, current_user: UserModel) -> None:
+        now = datetime.now(UTC)
+
+        current_user = UserGuards.require_user_is_exist(current_user)
+
+        if current_user.closed_at is not None:
+            raise UserAlreadyClosedError('User already closed error')
+
+        new_data = {
+            'closed_at': now
+        }
+        await self._user_commands.alter_user_info(current_user, new_data)
+        await self._auth_user_case.logout(current_user)
+
+
+    async def delete_user(self, user_id: UUID) -> None:
+        now = datetime.now(UTC)
+
+        obj = await self._user_queries.select_user_by_id(user_id)
+        obj = UserGuards.require_user_is_exist(obj)
+
+        if not now >= obj.closed_at + timedelta(days=self._user_guard_config.ACCOUNT_DELETION_GRACE_DAYS)\
+                or now >= obj.blocked_at + timedelta(days=self._user_guard_config.ACCOUNT_DELETION_GRACE_DAYS):
+            raise UserDeletionGracePeriodError('User deletion grace period error')
+
+        await self._user_commands.delete_user(obj)
+
 
 class ShowUserCase:
     """Кейс по показу данных пользователей"""
 
-    def __init__(self, user_queries: UserQueriesRepository) -> None:
-        self._user_queries = user_queries
-
 
 class ManageUserCase:
-    """"""
+    """Кейс по менедженгу данных пользователей"""
+
+    def __init__(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, auth_user_case: AuthUserCase) -> None:
+        self._user_commands = user_commands
+        self._user_queries = user_queries
+        self._auth_user_case = auth_user_case
+
+    async def block_user(self, user_id: UUID) -> None:
+        now = datetime.now(UTC)
+
+        obj = await self._user_queries.select_user_by_id(user_id)
+        obj = UserGuards.require_user_is_exist(obj)
+
+        if obj.blocked_at is not None:
+            raise UserAlreadyBlockedError('User already blocked error')
+
+        new_data = {
+            'blocked_at': now
+        }
+        await self._user_commands.alter_user_info(obj, new_data)
+        await self._auth_user_case.logout(obj)
+
+    async def unblock_user(self, user_id: UUID) -> None:
+        obj = await self._user_queries.select_user_by_id(user_id)
+        obj = UserGuards.require_user_is_exist(obj)
+
+        if obj.blocked_at is None:
+            raise UserAlreadyUnBlockedError('User already unblocked error')
+
+        new_data = {
+            'blocked_at': None
+        }
+        await self._user_commands.alter_user_info(obj, new_data)

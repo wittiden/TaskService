@@ -19,3 +19,33 @@ class InvalidPassError(UserRouterError):
 class UserNotFoundError(UserRouterError):
     status_code = 404
     title = 'User not found error'
+
+
+class UserDeletionGracePeriodError(UserRouterError):
+    status_code = 409
+    title = 'User grace period error'
+
+
+class UserAlreadyBlockedError(UserRouterError):
+    status_code = 409
+    title = 'User already blocked error'
+
+
+class UserAlreadyUnBlockedError(UserRouterError):
+    status_code = 409
+    title = 'User already unblocked error'
+
+
+class UserAlreadyClosedError(UserRouterError):
+    status_code = 409
+    title = 'User already blocked error'
+
+
+class ClosedUserError(UserRouterError):
+    status_code = 409
+    title = 'Closed user error'
+
+
+class BlockedUserError(UserRouterError):
+    status_code = 409
+    title = 'Blocked user error'

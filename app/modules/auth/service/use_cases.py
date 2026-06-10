@@ -124,6 +124,9 @@ class AuthUserCase:
 
         verify_pass(password, user.password_hash)
 
+        UserGuards.require_user_is_closed(user)
+        UserGuards.require_user_is_blocked(user)
+
         access_payload = {
             'sub': str(user.user_id),
             'role': user.role,
@@ -210,6 +213,9 @@ class CurrentUserCase:
         user_id = payload['sub']
         user = await self._user_queries.select_user_by_id(user_id)
         user = UserGuards.require_user_is_exist(user)
+
+        UserGuards.require_user_is_closed(user)
+        UserGuards.require_user_is_blocked(user)
 
         return user
 

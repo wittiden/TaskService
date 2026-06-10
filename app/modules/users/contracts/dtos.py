@@ -25,5 +25,6 @@ class FullUserInfoDTO(BaseModel):
     created_at: datetime
     closed_at: datetime | None
     updated_at: datetime | None
+    blocked_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
