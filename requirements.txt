@@ -20,3 +20,8 @@ slowapi~=0.1.9
 
 #logging
 loguru~=0.7.3
+
+#pre-commit pipeline
+ruff~=0.15.16
+pyright~=1.1.410
+pre-commit~=4.6.0
