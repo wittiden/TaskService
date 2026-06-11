@@ -3,29 +3,29 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: task_service:2.0
-    container_name: task_service_app
     labels:
       - author=wittiden
-      - version=2.0.0
       - project=TaskService
-    ports:
-      - "${SERVER_PORT}:8000"
+      - version=2.0.0
+    image: task_service_app:1.0.0
+    container_name: task_service_app
+    restart: unless-stopped
     stop_grace_period: 30s
+    networks:
+      - network
+    volumes:
+      - .:/app
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - .:/app
-    networks:
-      - network
     env_file:
       - .env
-    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health"]
       interval: 5s
       retries: 3
+    ports:
+      - "${SERVER_PORT}:8000"
     develop:
       watch:
         - action: sync+restart
@@ -34,21 +34,40 @@ services:
         - action: rebuild
           path: requirements.txt
 
+  migrations:
+    image: task_service_migrations:1.0.0
+    container_name: task_service_migrations
+    build:
+      context: .
+    command: ["alembic", "upgrade", "head"]
+    restart: no
+    volumes:
+      - .:/app
+    networks:
+      - network
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - migrations
+
   db:
     image: postgres:16-alpine
     container_name: task_service_db
     restart: unless-stopped
-    stop_grace_period: 30s
     networks:
       - network
-    ports:
-      - "${DB_PORT}:5432"
     environment:
       - POSTGRES_PASSWORD=${DB_PASS}
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
     volumes:
       - db_volume:/var/lib/postgresql/data
+    stop_grace_period: 30s
+    ports:
+      - "${DB_PORT}:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
       interval: 10s
@@ -78,14 +97,14 @@ services:
       retries: 5
 
 
-networks:
-  network:
-    driver: bridge
-    name: task_service_network
-
-
 volumes:
   db_volume:
     name: task_service_db_volume
   pgadmin_volume:
     name: task_service_pgadmin_volume
+
+
+networks:
+  network:
+    driver: bridge
+    name: task_service_network
