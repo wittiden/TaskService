@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine, async_sessionmaker
 
 from app.common.security.jwt_config import JWTConfig
 from app.infrastructure.database.config import DatabaseConfig
+from app.infrastructure.unit_of_work.uow import ProgramUnitOfWork
 from app.modules.auth.repository.commands import RefreshTokenCommandsRepository
 from app.modules.auth.repository.queries import RefreshTokenQueriesRepository
 from app.modules.auth.service.use_cases import ManageTokenCase, AuthUserCase, CurrentUserCase, ShowRefreshTokenCase, \
@@ -53,6 +54,15 @@ class DatabaseSessionProvider(Provider):
     async def database_async_session(self, async_session_factory: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncSession, None]:
         async with async_session_factory() as async_session:
             yield async_session
+
+
+class ProgramUnitOfWorkProvider(Provider):
+    """Провайдер по созданию контекстного менеджера uow"""
+
+    @provide(scope=Scope.REQUEST)
+    async def program_uow(self, async_session: AsyncSession) -> AsyncGenerator[ProgramUnitOfWork, None]:
+        async with ProgramUnitOfWork(async_session) as uow:
+            yield uow
 
 
 class JWTConfigProvider(Provider):
@@ -157,6 +167,7 @@ def create_async_container() -> AsyncContainer:
         DatabaseEngineProvider(),
         DatabaseSessionFactoryProvider(),
         DatabaseSessionProvider(),
+        ProgramUnitOfWorkProvider(),
         JWTConfigProvider(),
         CommandsRepositoryProvider(),
         QueriesRepositoryProvider(),
