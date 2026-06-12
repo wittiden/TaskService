@@ -12,7 +12,7 @@ class UserModel(Base):
 
     __tablename__ = 'users'
 
-    user_id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4())
+    user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(254), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -21,3 +21,15 @@ class UserModel(Base):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+
+    def __repr__(self) -> str:
+        return (
+                f'user_id: {self.user_id}, '
+                f'name: {self.name}, '
+                f'email: {self.email}, '
+                f'role: {self.role}, '
+                f'created_at: {self.created_at}, '
+                f'closed_at: {self.closed_at}, '
+                f'updated_at: {self.updated_at}, '
+                f'blocked_at: {self.blocked_at}, '
+                )
