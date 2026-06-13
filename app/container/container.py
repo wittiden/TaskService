@@ -1,9 +1,11 @@
 from typing import AsyncGenerator
+from redis.asyncio import Redis
 from dishka import Provider, provide, make_async_container, AsyncContainer, Scope
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine, async_sessionmaker, create_async_engine
 
 from app.common.security.jwt_config import JWTConfig
 from app.infrastructure.database.config import DatabaseConfig
+from app.infrastructure.redis.config import RedisConfig
 from app.infrastructure.unit_of_work.uow import ProgramUnitOfWork
 from app.modules.auth.repository.commands import RefreshTokenCommandsRepository
 from app.modules.auth.repository.queries import RefreshTokenQueriesRepository
@@ -28,11 +30,16 @@ class DatabaseEngineProvider(Provider):
     """Провайдер по созданию движка бд"""
 
     @provide(scope=Scope.APP)
-    def database_async_engine(self, database_config: DatabaseConfig) -> AsyncEngine:
-        return create_async_engine(
+    async def database_async_engine(self, database_config: DatabaseConfig) -> AsyncGenerator[AsyncEngine, None]:
+        async_engine = create_async_engine(
             url=database_config.database_url,
             echo=False,
         )
+
+        try:
+            yield async_engine
+        finally:
+            await async_engine.dispose()
 
 
 class DatabaseSessionFactoryProvider(Provider):
@@ -63,6 +70,33 @@ class ProgramUnitOfWorkProvider(Provider):
     async def program_uow(self, async_session: AsyncSession) -> AsyncGenerator[ProgramUnitOfWork, None]:
         async with ProgramUnitOfWork(async_session) as uow:
             yield uow
+
+
+class RedisConfigProvider(Provider):
+    """Провайдер для создания конфигурации redis"""
+
+    @provide(scope=Scope.APP)
+    def redis_config(self) -> RedisConfig:
+        return RedisConfig()
+
+
+class RedisClientProvider(Provider):
+    """Провайдер для создания клиента redis"""
+
+    @provide(scope=Scope.APP)
+    async def redis_client(self, redis_config: RedisConfig) -> AsyncGenerator[Redis, None]:
+        redis = Redis(
+            host=redis_config.REDIS_HOST,
+            port=redis_config.REDIS_PORT,
+            password=redis_config.REDIS_PASS,
+            decode_responses=True,
+            db=redis_config.REDIS_DB,
+        )
+
+        try:
+            yield redis
+        finally:
+            await redis.aclose()
 
 
 class JWTConfigProvider(Provider):
@@ -168,6 +202,8 @@ def create_async_container() -> AsyncContainer:
         DatabaseSessionFactoryProvider(),
         DatabaseSessionProvider(),
         ProgramUnitOfWorkProvider(),
+        RedisConfigProvider(),
+        RedisClientProvider(),
         JWTConfigProvider(),
         CommandsRepositoryProvider(),
         QueriesRepositoryProvider(),
