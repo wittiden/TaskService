@@ -18,12 +18,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - .env
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health"]
-      interval: 5s
-      retries: 3
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health/app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     ports:
       - "${SERVER_PORT}:8000"
     develop:
@@ -96,12 +100,34 @@ services:
       timeout: 10s
       retries: 5
 
+  redis:
+    image: redis:8.0-alpine
+    container_name: task_service_redis
+    restart: unless-stopped
+    stop_grace_period: 30s
+    command: redis-server --requirepass ${REDIS_PASS}
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      - network
+    volumes:
+      - redis_volume:/data
+    environment:
+      - REDIS_PASS=${REDIS_PASS}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
 
 volumes:
   db_volume:
     name: task_service_db_volume
   pgadmin_volume:
     name: task_service_pgadmin_volume
+  redis_volume:
+    name: task_service_redis_volume
 
 
 networks:

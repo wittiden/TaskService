@@ -1,4 +1,5 @@
 from typing import AsyncGenerator
+
 from redis.asyncio import Redis
 from dishka import Provider, provide, make_async_container, AsyncContainer, Scope
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine, async_sessionmaker, create_async_engine
@@ -34,6 +35,13 @@ class DatabaseEngineProvider(Provider):
         async_engine = create_async_engine(
             url=database_config.database_url,
             echo=False,
+            pool_pre_ping=True,
+            pool_size=10,
+            max_overflow=20,
+            pool_timeout=5,
+            connect_args={
+                'command_timeout': 5
+            }
         )
 
         try:
@@ -89,8 +97,10 @@ class RedisClientProvider(Provider):
             host=redis_config.REDIS_HOST,
             port=redis_config.REDIS_PORT,
             password=redis_config.REDIS_PASS,
-            decode_responses=True,
             db=redis_config.REDIS_DB,
+            decode_responses=True,
+            socket_timeout=3,
+            socket_connect_timeout=1,
         )
 
         try:
