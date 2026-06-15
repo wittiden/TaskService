@@ -189,8 +189,8 @@ class UserCasesProvider(Provider):
         return CreateUserCase(user_commands)
 
     @provide
-    def update_user_case(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository) -> UpdateUserCase:
-        return UpdateUserCase(user_commands, user_queries)
+    def update_user_case(self, user_commands: UserCommandsRepository) -> UpdateUserCase:
+        return UpdateUserCase(user_commands)
 
     @provide
     def delete_user_case(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, user_guard_config: UserGuardConfig, auth_user_case: AuthUserCase) -> DeleteUserCase:

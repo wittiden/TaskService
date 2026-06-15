@@ -53,9 +53,8 @@ class CreateUserCase:
 class UpdateUserCase:
     """Кейс по обновлению данных пользователей"""
 
-    def __init__(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository) -> None:
+    def __init__(self, user_commands: UserCommandsRepository) -> None:
         self._user_commands = user_commands
-        self._user_queries = user_queries
 
     async def partial_user_data(self, current_user: UserModel, new_data: dict[str, Any]) -> SecurityUserInfoDTO:
         now = datetime.now(UTC)
@@ -125,8 +124,7 @@ class ShowUserCase:
         return [FullUserInfoDTO.model_validate(obj) for obj in objs]
 
     async def show_my_user(self, current_user: UserModel) -> SecurityUserInfoDTO:
-        obj = await self._user_queries.select_user(current_user)
-        obj = UserGuards.require_user_is_exist(obj)
+        obj = UserGuards.require_user_is_exist(current_user)
         return SecurityUserInfoDTO.model_validate(obj)
 
     async def show_user_by_id(self, user_id: UUID) -> FullUserInfoDTO:
@@ -134,10 +132,6 @@ class ShowUserCase:
         obj = UserGuards.require_user_is_exist(obj)
         return FullUserInfoDTO.model_validate(obj)
 
-    async def show_user_by_email(self, email: str) -> SecurityUserInfoDTO:
-        obj = await self._user_queries.select_user_by_email(email)
-        obj = UserGuards.require_user_is_exist(obj)
-        return SecurityUserInfoDTO.model_validate(obj)
 
 class ManageUserCase:
     """Кейс по менедженгу данных пользователей"""

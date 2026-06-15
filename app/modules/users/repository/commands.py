@@ -18,6 +18,7 @@ class UserCommandsRepository:
             await self._async_session.flush()
             return user
         except IntegrityError:
+            await self._async_session.rollback()
             raise
 
     async def alter_user_info(self, user: UserModel, new_data: dict[str, Any]) -> UserModel:
@@ -28,6 +29,7 @@ class UserCommandsRepository:
             await self._async_session.flush()
             return user
         except IntegrityError:
+            await self._async_session.rollback()
             raise
 
     async def delete_user(self, user: UserModel) -> None:

@@ -164,12 +164,14 @@ class AuthUserCase:
 
         refresh_token_id = payload['jti']
         obj = await self._refresh_token_queries.select_refresh_token_by_id(refresh_token_id)
+        obj = AuthGuards.require_refresh_token(obj)
 
         if obj.revoked_at is not None:
             raise RevokedTokenError('Token was burned error')
 
         user_id = payload['sub']
         user = await self._user_queries.select_user_by_id(user_id)
+        user = UserGuards.require_user_is_exist(user)
 
         now = datetime.now(UTC)
         new_data = {

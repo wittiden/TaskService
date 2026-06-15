@@ -1,5 +1,6 @@
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from fastapi import Request, Response
+from starlette.requests import Request
+from starlette.responses import Response
 from loguru import logger
 from time import perf_counter
 from uuid import uuid4

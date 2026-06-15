@@ -14,8 +14,8 @@ class ProgramUnitOfWork:
 
     async def __aexit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None) -> None:
         try:
-            if exc_tb:
-               await self._async_session.rollback()
+            if exc_type is not None:
+                await self._async_session.rollback()
 
             else:
                 await self._async_session.commit()

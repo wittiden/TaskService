@@ -19,6 +19,7 @@ class RefreshTokenCommandsRepository:
             await self._async_session.flush()
             return refresh_token
         except IntegrityError:
+            await self._async_session.rollback()
             raise
 
     async def alter_refresh_token_data(self, refresh_token: RefreshTokenModel, new_data: dict[str, Any]) -> RefreshTokenModel:
@@ -29,6 +30,7 @@ class RefreshTokenCommandsRepository:
             await self._async_session.flush()
             return refresh_token
         except IntegrityError:
+            await self._async_session.rollback()
             raise
 
     async def delete_refresh_token(self, refresh_token: RefreshTokenModel) -> None:

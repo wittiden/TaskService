@@ -1,7 +1,8 @@
 import asyncio
 from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from fastapi import Response, Request
+from starlette.requests import Request
+from starlette.responses import Response
 
 from app.infrastructure.http.middleware.exceptions import HTTPTimeoutError
 
