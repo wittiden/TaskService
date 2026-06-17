@@ -5,13 +5,13 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.users import UserRoleEnum
-from app.common.security.pass_utils import hash_pass, verify_pass, same_pass
+from app.common.security.pass_utils import hash_pass, same_pass
 from app.infrastructure.database.models import UserModel
 from app.infrastructure.redis.repositories.current_user import RedisCurrentUserRepository
 from app.modules.auth.service.use_cases import AuthUserCase
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO, UserInfoDTO
 from app.modules.users.exceptions import EmailIsExistError, UserDeletionGracePeriodError, UserAlreadyClosedError, \
-    UserAlreadyBlockedError, UserAlreadyUnBlockedError, SamePasswordsError
+    UserAlreadyBlockedError, UserAlreadyUnBlockedError, UserNotMarkedForDeletion
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.guard_config import UserGuardConfig
@@ -60,11 +60,16 @@ class UpdateUserCase:
         self._redis_current_user = redis_current_user
 
     async def partial_user_data(self, current_user: UserInfoDTO, new_data: dict[str, Any]) -> SecurityUserInfoDTO:
-        user_model = await self._user_queries.select_user_by_id(current_user.user_id)
-        user_model = UserGuards.require_user_is_exist(user_model)
+        columns = await self._user_queries.select_user_id_and_pass(current_user.user_id)
+        columns = UserGuards.require_columns_is_exist(columns)
+
+        if columns['blocked_at'] is not None:
+            raise UserAlreadyBlockedError('User already blocked error')
+        if columns['closed_at'] is not None:
+            raise UserAlreadyClosedError('User already closed error')
 
         if 'password' in new_data:
-            same_pass(new_data['password'], user_model.password_hash)
+            same_pass(new_data['password'], columns['password_hash'])
             new_data['password_hash'] = hash_pass(new_data.pop('password'))
 
         if all(x is None for x in new_data.values()):
@@ -72,7 +77,7 @@ class UpdateUserCase:
 
         new_data['updated_at'] = datetime.now(UTC)
 
-        updated_user_model = await self._user_commands.alter_user_info(user_model, new_data)
+        updated_user_model = await self._user_commands.alter_user_info_by_id(current_user.user_id, new_data)
         await self._redis_current_user.set_current_user(UserInfoDTO.model_validate(updated_user_model))
 
         return SecurityUserInfoDTO.model_validate(updated_user_model)
@@ -111,6 +116,9 @@ class DeleteUserCase:
 
         obj = await self._user_queries.select_user_by_id(user_id)
         obj = UserGuards.require_user_is_exist(obj)
+
+        if obj.blocked_at is None or obj.closed_at is None:
+            raise UserNotMarkedForDeletion('Cant delete without special mark')
 
         if not now >= obj.closed_at + timedelta(days=self._user_guard_config.ACCOUNT_DELETION_GRACE_DAYS)\
                 or now >= obj.blocked_at + timedelta(days=self._user_guard_config.ACCOUNT_DELETION_GRACE_DAYS):
@@ -178,4 +186,3 @@ class ManageUserCase:
         user = await self._user_commands.alter_user_info(obj, new_data)
         user_dto = UserInfoDTO.model_validate(user)
         await self._redis_current_user.set_current_user(user_dto)
-

@@ -61,7 +61,6 @@ class ManageTokenCase:
         except InvalidTokenError:
             raise TokenInvalidError('Token invalid error')
 
-
     async def encode_refresh_token(self, payload: dict[str, Any]) -> str:
         now = datetime.now(UTC)
         token_id = str(uuid4())

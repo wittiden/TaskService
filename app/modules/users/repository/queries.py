@@ -29,3 +29,8 @@ class UserQueriesRepository:
         obj = await self._async_session.execute(select(UserModel.user_id, UserModel.closed_at).where(UserModel.user_id == user_id))
         obj = obj.mappings().one_or_none()
         return dict(obj) if obj else None
+
+    async def select_user_id_and_pass(self, user_id: UUID) -> dict | None:
+        obj = await self._async_session.execute(select(UserModel.user_id, UserModel.password_hash, UserModel.closed_at, UserModel.blocked_at).where(UserModel.user_id == user_id))
+        obj = obj.mappings().one_or_none()
+        return dict(obj) if obj else None

@@ -10,6 +10,7 @@ class SecurityUserInfoDTO(BaseModel):
 
     name: str
     email: str
+    role: UserRoleEnum
 
     model_config = ConfigDict(from_attributes=True)
 

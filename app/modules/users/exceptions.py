@@ -59,3 +59,8 @@ class BlockedUserError(UserRouterError):
 class SamePasswordsError(UserRouterError):
     status_code = 409
     title = 'Same passwords error'
+
+
+class UserNotMarkedForDeletion(UserRouterError):
+    status_code = 409
+    title = 'User not marked for deletion'
