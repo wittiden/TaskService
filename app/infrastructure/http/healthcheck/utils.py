@@ -1,4 +1,4 @@
-from redis.asyncio import Redis
+from redis.asyncio import Redis, ConnectionError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy import select
 
@@ -36,5 +36,5 @@ async def redis_health(redis_client: Redis) -> dict[str, str]:
             'Status': 'healthy',
             'Service': 'redis'
         }
-    except Exception as ex:
-        raise RedisHealthError('Status: unhealthy') from ex
+    except ConnectionError:
+        raise RedisHealthError('Status: unhealthy')
