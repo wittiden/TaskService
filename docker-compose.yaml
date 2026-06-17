@@ -115,10 +115,31 @@ services:
     environment:
       - REDIS_PASS=${REDIS_PASS}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASS}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
+
+  redisinsight:
+    image: redislabs/redisinsight:3.6
+    container_name: task_service_redisinsight
+    volumes:
+      - redisinsight_volume:/data
+    environment:
+      - RI_ENCRYPTION_KEY=${RI_ENCRYPTION_KEY}
+    ports:
+      - "${RI_PORT}:5540"
+    restart: unless-stopped
+    networks:
+      - network
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5540 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - redisinsight
 
 
 volumes:
@@ -128,6 +149,8 @@ volumes:
     name: task_service_pgadmin_volume
   redis_volume:
     name: task_service_redis_volume
+  redisinsight_volume:
+    name: task_service_redisinsight_volume
 
 
 networks:
