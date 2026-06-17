@@ -21,6 +21,11 @@ class UserNotFoundError(UserRouterError):
     title = 'User not found error'
 
 
+class ColumnsNotFoundError(UserRouterError):
+    status_code = 404
+    title = 'Columns not found error'
+
+
 class UserDeletionGracePeriodError(UserRouterError):
     status_code = 409
     title = 'User grace period error'

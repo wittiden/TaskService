@@ -9,13 +9,14 @@ from app.common.enums.auth import TokenTypeEnum
 from app.common.enums.users import UserRoleEnum
 from app.common.security.jwt_config import JWTConfig
 from app.common.security.pass_utils import verify_pass
-from app.infrastructure.database.models import UserModel
+from app.infrastructure.redis.repositories.current_user import RedisCurrentUserRepository
 from app.modules.auth.contracts.dtos import TokensInfoDTO, FullRefreshTokenInfoDTO
 from app.modules.auth.exceptions import InvalidTokenVersionError, ForbiddenError, RevokedTokenError, TokenInvalidError, \
     ExpiredTokenError, InvalidTokenAudienceError, TokenRetentionPeriodError
 from app.modules.auth.repository.commands import RefreshTokenCommandsRepository
 from app.modules.auth.repository.queries import RefreshTokenQueriesRepository
 from app.modules.auth.service.guards import AuthGuards
+from app.modules.users.contracts.dtos import UserInfoDTO
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.guards import UserGuards
 from app.infrastructure.database.models.refresh_token import RefreshTokenModel
@@ -111,12 +112,13 @@ class ManageTokenCase:
 class AuthUserCase:
     """Кейс по аутентификации пользователя"""
 
-    def __init__(self, user_queries: UserQueriesRepository, manage_token_case: ManageTokenCase, refresh_token_commands: RefreshTokenCommandsRepository, refresh_token_queries: RefreshTokenQueriesRepository, jwt_config: JWTConfig) -> None:
+    def __init__(self, user_queries: UserQueriesRepository, manage_token_case: ManageTokenCase, refresh_token_commands: RefreshTokenCommandsRepository, refresh_token_queries: RefreshTokenQueriesRepository, jwt_config: JWTConfig, redis_current_user: RedisCurrentUserRepository) -> None:
         self._user_queries = user_queries
         self._manage_token_case = manage_token_case
         self._refresh_token_commands = refresh_token_commands
         self._refresh_token_queries = refresh_token_queries
         self._jwt_config = jwt_config
+        self._redis_current_user = redis_current_user
 
     async def login_user(self, email: str, password: str) -> TokensInfoDTO:
         user = await self._user_queries.select_user_by_email(email)
@@ -141,7 +143,7 @@ class AuthUserCase:
 
         return TokensInfoDTO(access_token=access_token, refresh_token=refresh_token)
 
-    async def logout(self, current_user: UserModel) -> None:
+    async def logout(self, current_user: UserInfoDTO) -> None:
         now = datetime.now(UTC)
 
         new_data = {
@@ -170,8 +172,19 @@ class AuthUserCase:
             raise RevokedTokenError('Token was burned error')
 
         user_id = payload['sub']
-        user = await self._user_queries.select_user_by_id(user_id)
-        user = UserGuards.require_user_is_exist(user)
+        user = await self._redis_current_user.get_current_user(user_id)
+        if user is None:
+            user = await self._user_queries.select_user_by_id(user_id)
+            user = UserGuards.require_user_is_exist(user)
+            UserGuards.require_user_is_closed(user)
+            UserGuards.require_user_is_blocked(user)
+
+            user = UserInfoDTO.model_validate(user)
+            await self._redis_current_user.set_current_user(user)
+
+        else:
+            UserGuards.require_user_is_closed(user)
+            UserGuards.require_user_is_blocked(user)
 
         now = datetime.now(UTC)
         new_data = {
@@ -184,7 +197,7 @@ class AuthUserCase:
             'role': user.role,
         }
         refresh_payload = {
-            'sub': user.user_id,
+            'sub': str(user.user_id),
         }
         access_token = self._manage_token_case.encode_access_token(access_payload)
         refresh_token = await self._manage_token_case.encode_refresh_token(refresh_payload)
@@ -195,11 +208,12 @@ class AuthUserCase:
 class CurrentUserCase:
     """Кейс по получению текущего пользователя"""
 
-    def __init__(self, user_queries: UserQueriesRepository, manage_token_case: ManageTokenCase) -> None:
+    def __init__(self, user_queries: UserQueriesRepository, manage_token_case: ManageTokenCase, redis_current_user: RedisCurrentUserRepository) -> None:
         self._user_queries = user_queries
         self._manage_token_case = manage_token_case
+        self._redis_current_user = redis_current_user
 
-    async def _current(self, access_token: str, require_admin: bool = False, require_vip: bool = False) -> UserModel:
+    async def _current(self, access_token: str, require_admin: bool = False, require_vip: bool = False) -> UserInfoDTO:
         payload = self._manage_token_case.decode_access_token(access_token)
         token_type = payload['token_type']
         AuthGuards.require_access_token_type(token_type)
@@ -213,21 +227,29 @@ class CurrentUserCase:
                 raise ForbiddenError('Invalid user role error')
 
         user_id = payload['sub']
-        user = await self._user_queries.select_user_by_id(user_id)
-        user = UserGuards.require_user_is_exist(user)
+        user = await self._redis_current_user.get_current_user(user_id)
+        if user is None:
+            user = await self._user_queries.select_user_by_id(user_id)
+            user = UserGuards.require_user_is_exist(user)
+            UserGuards.require_user_is_closed(user)
+            UserGuards.require_user_is_blocked(user)
 
-        UserGuards.require_user_is_closed(user)
-        UserGuards.require_user_is_blocked(user)
+            user = UserInfoDTO.model_validate(user)
+            await self._redis_current_user.set_current_user(user)
+
+        else:
+            UserGuards.require_user_is_closed(user)
+            UserGuards.require_user_is_blocked(user)
 
         return user
 
-    async def show_current_user(self, access_token: str) -> UserModel:
+    async def show_current_user(self, access_token: str) -> UserInfoDTO:
         return await self._current(access_token)
 
-    async def show_current_vip(self, access_token: str) -> UserModel:
+    async def show_current_vip(self, access_token: str) -> UserInfoDTO:
         return await self._current(access_token, require_vip=True)
 
-    async def show_current_admin(self, access_token: str) -> UserModel:
+    async def show_current_admin(self, access_token: str) -> UserInfoDTO:
         return await self._current(access_token, require_admin=True)
 
 

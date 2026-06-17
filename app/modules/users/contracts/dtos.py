@@ -14,14 +14,13 @@ class SecurityUserInfoDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class FullUserInfoDTO(BaseModel):
+class UserInfoDTO(BaseModel):
     """Схема для полной передачи данных пользователя"""
 
     user_id: UUID
     name: str
     email: str
     role: UserRoleEnum
-    is_blocked: bool
     created_at: datetime
     closed_at: datetime | None
     updated_at: datetime | None

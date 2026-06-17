@@ -5,10 +5,11 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.users import UserRoleEnum
-from app.common.security.pass_utils import hash_pass, verify_pass
+from app.common.security.pass_utils import hash_pass, verify_pass, same_pass
 from app.infrastructure.database.models import UserModel
+from app.infrastructure.redis.repositories.current_user import RedisCurrentUserRepository
 from app.modules.auth.service.use_cases import AuthUserCase
-from app.modules.users.contracts.dtos import SecurityUserInfoDTO, FullUserInfoDTO
+from app.modules.users.contracts.dtos import SecurityUserInfoDTO, UserInfoDTO
 from app.modules.users.exceptions import EmailIsExistError, UserDeletionGracePeriodError, UserAlreadyClosedError, \
     UserAlreadyBlockedError, UserAlreadyUnBlockedError, SamePasswordsError
 from app.modules.users.repository.commands import UserCommandsRepository
@@ -53,51 +54,56 @@ class CreateUserCase:
 class UpdateUserCase:
     """Кейс по обновлению данных пользователей"""
 
-    def __init__(self, user_commands: UserCommandsRepository) -> None:
+    def __init__(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, redis_current_user: RedisCurrentUserRepository) -> None:
         self._user_commands = user_commands
+        self._user_queries = user_queries
+        self._redis_current_user = redis_current_user
 
-    async def partial_user_data(self, current_user: UserModel, new_data: dict[str, Any]) -> SecurityUserInfoDTO:
-        now = datetime.now(UTC)
-
-        current_user = UserGuards.require_user_is_exist(current_user)
+    async def partial_user_data(self, current_user: UserInfoDTO, new_data: dict[str, Any]) -> SecurityUserInfoDTO:
+        user_model = await self._user_queries.select_user_by_id(current_user.user_id)
+        user_model = UserGuards.require_user_is_exist(user_model)
 
         if 'password' in new_data:
-            if verify_pass(new_data['password'], current_user.password_hash):
-                raise SamePasswordsError('Same passwords error')
-
+            same_pass(new_data['password'], user_model.password_hash)
             new_data['password_hash'] = hash_pass(new_data.pop('password'))
 
         if all(x is None for x in new_data.values()):
             return SecurityUserInfoDTO.model_validate(current_user)
 
-        new_data['updated_at'] = now
+        new_data['updated_at'] = datetime.now(UTC)
 
-        user = await self._user_commands.alter_user_info(current_user, new_data)
-        return SecurityUserInfoDTO.model_validate(user)
+        updated_user_model = await self._user_commands.alter_user_info(user_model, new_data)
+        await self._redis_current_user.set_current_user(UserInfoDTO.model_validate(updated_user_model))
+
+        return SecurityUserInfoDTO.model_validate(updated_user_model)
 
 
 class DeleteUserCase:
     """Кейс по удалению пользователей"""
 
-    def __init__(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, user_guard_config: UserGuardConfig, auth_user_case: AuthUserCase) -> None:
+    def __init__(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, user_guard_config: UserGuardConfig, auth_user_case: AuthUserCase, redis_current_user: RedisCurrentUserRepository) -> None:
         self._user_commands = user_commands
         self._user_queries = user_queries
         self._user_guard_config = user_guard_config
         self._auth_user_case = auth_user_case
+        self._redis_current_user = redis_current_user
 
-    async def close_user(self, current_user: UserModel) -> None:
-        now = datetime.now(UTC)
+    async def close_user(self, current_user: UserInfoDTO) -> None:
+        columns = await self._user_queries.select_user_id_and_closed_at(current_user.user_id)
+        columns = UserGuards.require_columns_is_exist(columns)
 
-        current_user = UserGuards.require_user_is_exist(current_user)
-
-        if current_user.closed_at is not None:
+        if columns['closed_at'] is not None:
             raise UserAlreadyClosedError('User already closed error')
 
         new_data = {
-            'closed_at': now
+            'closed_at': datetime.now(UTC)
         }
-        await self._user_commands.alter_user_info(current_user, new_data)
-        await self._auth_user_case.logout(current_user)
+        updated_user_model = await self._user_commands.alter_user_info_by_id(current_user.user_id, new_data)
+        updated_user_model = UserGuards.require_user_is_exist(updated_user_model)
+        user_dto = UserInfoDTO.model_validate(updated_user_model)
+
+        await self._auth_user_case.logout(user_dto)
+        await self._redis_current_user.delete_current_user_from_redis(current_user.user_id)
 
 
     async def delete_user(self, user_id: UUID) -> None:
@@ -110,6 +116,7 @@ class DeleteUserCase:
                 or now >= obj.blocked_at + timedelta(days=self._user_guard_config.ACCOUNT_DELETION_GRACE_DAYS):
             raise UserDeletionGracePeriodError('User deletion grace period error')
 
+        await self._redis_current_user.delete_current_user_from_redis(obj.user_id)
         await self._user_commands.delete_user(obj)
 
 
@@ -119,27 +126,27 @@ class ShowUserCase:
     def __init__(self, user_queries: UserQueriesRepository) -> None:
         self._user_queries = user_queries
 
-    async def show_users(self, limit: int = 100, offset: int = 0) -> list[FullUserInfoDTO]:
+    async def show_users(self, limit: int = 100, offset: int = 0) -> list[UserInfoDTO]:
         objs = await self._user_queries.select_users(limit, offset)
-        return [FullUserInfoDTO.model_validate(obj) for obj in objs]
+        return [UserInfoDTO.model_validate(obj) for obj in objs]
 
-    async def show_my_user(self, current_user: UserModel) -> SecurityUserInfoDTO:
-        obj = UserGuards.require_user_is_exist(current_user)
-        return SecurityUserInfoDTO.model_validate(obj)
+    async def show_my_user(self, current_user: UserInfoDTO) -> SecurityUserInfoDTO:
+        return SecurityUserInfoDTO.model_validate(current_user)
 
-    async def show_user_by_id(self, user_id: UUID) -> FullUserInfoDTO:
+    async def show_user_by_id(self, user_id: UUID) -> UserInfoDTO:
         obj = await self._user_queries.select_user_by_id(user_id)
         obj = UserGuards.require_user_is_exist(obj)
-        return FullUserInfoDTO.model_validate(obj)
+        return UserInfoDTO.model_validate(obj)
 
 
 class ManageUserCase:
     """Кейс по менедженгу данных пользователей"""
 
-    def __init__(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, auth_user_case: AuthUserCase) -> None:
+    def __init__(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, auth_user_case: AuthUserCase, redis_current_user: RedisCurrentUserRepository) -> None:
         self._user_commands = user_commands
         self._user_queries = user_queries
         self._auth_user_case = auth_user_case
+        self._redis_current_user = redis_current_user
 
     async def block_user(self, user_id: UUID) -> None:
         now = datetime.now(UTC)
@@ -153,8 +160,10 @@ class ManageUserCase:
         new_data = {
             'blocked_at': now
         }
-        await self._user_commands.alter_user_info(obj, new_data)
-        await self._auth_user_case.logout(obj)
+        user = await self._user_commands.alter_user_info(obj, new_data)
+        user_dto = UserInfoDTO.model_validate(user)
+        await self._auth_user_case.logout(user_dto)
+        await self._redis_current_user.delete_current_user_from_redis(user_id)
 
     async def unblock_user(self, user_id: UUID) -> None:
         obj = await self._user_queries.select_user_by_id(user_id)
@@ -166,4 +175,7 @@ class ManageUserCase:
         new_data = {
             'blocked_at': None
         }
-        await self._user_commands.alter_user_info(obj, new_data)
+        user = await self._user_commands.alter_user_info(obj, new_data)
+        user_dto = UserInfoDTO.model_validate(user)
+        await self._redis_current_user.set_current_user(user_dto)
+

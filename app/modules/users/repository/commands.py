@@ -1,4 +1,7 @@
 from typing import Any
+from uuid import UUID
+
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
@@ -28,6 +31,18 @@ class UserCommandsRepository:
         try:
             await self._async_session.flush()
             return user
+        except IntegrityError:
+            await self._async_session.rollback()
+            raise
+
+    async def alter_user_info_by_id(self, user_id: UUID, new_data: dict[str, Any]) -> UserModel | None:
+        try:
+            obj = (await self._async_session.execute
+                (
+                update(UserModel).where(UserModel.user_id == user_id).values(**new_data).returning(UserModel)
+            ))
+
+            return obj.scalar_one_or_none()
         except IntegrityError:
             await self._async_session.rollback()
             raise

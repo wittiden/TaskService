@@ -5,7 +5,7 @@ from app.common.exceptions.base_ex import RouterError
 
 
 def app_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    path = f'{request.method} {request.url.path}',
+    path = f'{request.method} {request.url.path}'
 
     if isinstance(exc, RouterError):
         return JSONResponse(
@@ -22,5 +22,6 @@ def app_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         content={
             'path': path,
             'title': 'Internal Server Error',
-            'detail': 'An unexpected error occurred',        }
+            'detail': 'An unexpected error occurred',
+        }
     )

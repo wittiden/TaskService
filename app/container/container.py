@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine, async_sessionmaker
 from app.common.security.jwt_config import JWTConfig
 from app.infrastructure.database.config import DatabaseConfig
 from app.infrastructure.redis.config import RedisConfig
+from app.infrastructure.redis.repositories.current_user import RedisCurrentUserRepository
 from app.infrastructure.unit_of_work.uow import ProgramUnitOfWork
 from app.modules.auth.repository.commands import RefreshTokenCommandsRepository
 from app.modules.auth.repository.queries import RefreshTokenQueriesRepository
@@ -109,6 +110,16 @@ class RedisClientProvider(Provider):
             await redis.aclose()
 
 
+class RedisRepositoriesProvider(Provider):
+    """Провайдер по созданию репозиториев Redis"""
+
+    scope = Scope.APP
+
+    @provide
+    def redis_current_user_repo(self, redis_client: Redis) -> RedisCurrentUserRepository:
+        return RedisCurrentUserRepository(redis_client)
+
+
 class JWTConfigProvider(Provider):
     """Провайдер для конфигурации jwt токенов"""
 
@@ -155,12 +166,12 @@ class AuthCasesProvider(Provider):
         return ManageTokenCase(jwt_config, refresh_token_commands)
 
     @provide
-    def auth_user_case(self, user_queries: UserQueriesRepository, manage_token_case: ManageTokenCase, refresh_token_commands: RefreshTokenCommandsRepository, refresh_token_queries: RefreshTokenQueriesRepository, jwt_config: JWTConfig) -> AuthUserCase:
-        return AuthUserCase(user_queries, manage_token_case, refresh_token_commands, refresh_token_queries, jwt_config)
+    def auth_user_case(self, user_queries: UserQueriesRepository, manage_token_case: ManageTokenCase, refresh_token_commands: RefreshTokenCommandsRepository, refresh_token_queries: RefreshTokenQueriesRepository, jwt_config: JWTConfig, redis_current_user: RedisCurrentUserRepository) -> AuthUserCase:
+        return AuthUserCase(user_queries, manage_token_case, refresh_token_commands, refresh_token_queries, jwt_config, redis_current_user)
 
     @provide
-    def current_user_case(self, user_queries: UserQueriesRepository, manage_token_case: ManageTokenCase) -> CurrentUserCase:
-        return CurrentUserCase(user_queries, manage_token_case)
+    def current_user_case(self, user_queries: UserQueriesRepository, manage_token_case: ManageTokenCase, redis_current_user: RedisCurrentUserRepository) -> CurrentUserCase:
+        return CurrentUserCase(user_queries, manage_token_case, redis_current_user)
 
     @provide
     def show_refresh_token_case(self, refresh_token_queries: RefreshTokenQueriesRepository) -> ShowRefreshTokenCase:
@@ -189,20 +200,20 @@ class UserCasesProvider(Provider):
         return CreateUserCase(user_commands)
 
     @provide
-    def update_user_case(self, user_commands: UserCommandsRepository) -> UpdateUserCase:
-        return UpdateUserCase(user_commands)
+    def update_user_case(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, redis_current_user: RedisCurrentUserRepository) -> UpdateUserCase:
+        return UpdateUserCase(user_commands, user_queries, redis_current_user)
 
     @provide
-    def delete_user_case(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, user_guard_config: UserGuardConfig, auth_user_case: AuthUserCase) -> DeleteUserCase:
-        return DeleteUserCase(user_commands, user_queries, user_guard_config, auth_user_case)
+    def delete_user_case(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, user_guard_config: UserGuardConfig, auth_user_case: AuthUserCase, redis_current_user: RedisCurrentUserRepository) -> DeleteUserCase:
+        return DeleteUserCase(user_commands, user_queries, user_guard_config, auth_user_case, redis_current_user)
 
     @provide
     def show_user_case(self, user_queries: UserQueriesRepository) -> ShowUserCase:
         return ShowUserCase(user_queries)
 
     @provide
-    def manage_user_case(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, auth_user_case: AuthUserCase) -> ManageUserCase:
-        return ManageUserCase(user_commands, user_queries, auth_user_case)
+    def manage_user_case(self, user_commands: UserCommandsRepository, user_queries: UserQueriesRepository, auth_user_case: AuthUserCase, redis_current_user: RedisCurrentUserRepository) -> ManageUserCase:
+        return ManageUserCase(user_commands, user_queries, auth_user_case, redis_current_user)
 
 
 def create_async_container() -> AsyncContainer:
@@ -214,6 +225,7 @@ def create_async_container() -> AsyncContainer:
         ProgramUnitOfWorkProvider(),
         RedisConfigProvider(),
         RedisClientProvider(),
+        RedisRepositoriesProvider(),
         JWTConfigProvider(),
         CommandsRepositoryProvider(),
         QueriesRepositoryProvider(),
