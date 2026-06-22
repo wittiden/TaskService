@@ -26,3 +26,14 @@ loguru~=0.7.3
 ruff~=0.15.16
 pyright~=1.1.410
 pre-commit~=4.6.0
+
+#tests
+pytest~=9.1.0
+pytest-asyncio~=1.4.0
+pytest-mock~=3.15.1
+pytest-cov~=7.1.0
+pytest-xdist~=3.8.0
+httpx~=0.28.1
+testcontainers~=4.14.2
+faker~=40.23.0
+factory-boy~=3.3.3
