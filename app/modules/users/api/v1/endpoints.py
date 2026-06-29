@@ -42,7 +42,7 @@ async def create_admin_endpoint(request: Request, response: Response, schema: Cr
 @limiter.limit('10/minute')
 @inject
 async def partial_update_user_data_endpoint(request: Request, response: Response, current_user: CurrentUser, schema: UpdateUserSchema, service: FromDishka[UpdateUserCase], uow: FromDishka[ProgramUnitOfWork]) -> SecurityUserInfoDTO:
-    return await service.partial_user_data(current_user, schema.model_dump(exclude_none=True))
+    return await service.partial_update_user_data(current_user, schema.model_dump(exclude_none=True))
 
 
 @users_router.delete('/me', summary='Close my user')

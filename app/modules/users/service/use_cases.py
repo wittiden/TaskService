@@ -29,12 +29,12 @@ class CreateUserCase:
         created_at = datetime.now(UTC)
 
         user = UserModel(name=name, email=email, password_hash=password_hash, role=role, created_at=created_at)
-        user = UserGuards.require_user_is_exist(user)
 
         try:
             user = await self._user_commands.insert_user_data(user)
         except IntegrityError:
             raise EmailIsExistError('User email must be unique')
+        user = UserGuards.require_user_is_exist(user)
 
         return SecurityUserInfoDTO.model_validate(user)
 
@@ -59,7 +59,10 @@ class UpdateUserCase:
         self._user_queries = user_queries
         self._redis_current_user = redis_current_user
 
-    async def partial_user_data(self, current_user: UserInfoDTO, new_data: dict[str, Any]) -> SecurityUserInfoDTO:
+    async def partial_update_user_data(self, current_user: UserInfoDTO, new_data: dict[str, Any]) -> SecurityUserInfoDTO:
+        if all(x is None for x in new_data.values()):
+            return SecurityUserInfoDTO.model_validate(current_user)
+
         columns = await self._user_queries.select_user_id_and_pass(current_user.user_id)
         columns = UserGuards.require_columns_is_exist(columns)
 
@@ -71,9 +74,6 @@ class UpdateUserCase:
         if 'password' in new_data:
             same_pass(new_data['password'], columns['password_hash'])
             new_data['password_hash'] = hash_pass(new_data.pop('password'))
-
-        if all(x is None for x in new_data.values()):
-            return SecurityUserInfoDTO.model_validate(current_user)
 
         new_data['updated_at'] = datetime.now(UTC)
 

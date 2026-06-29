@@ -1,5 +1,6 @@
+from uuid import uuid4
 from datetime import datetime, UTC
-from factory import Factory, LazyFunction, Faker, Trait
+from factory import Factory, Trait, LazyFunction, Faker
 
 from app.common.enums.users import UserRoleEnum
 from app.infrastructure.database.models import UserModel
@@ -11,6 +12,7 @@ class UserFactory(Factory):
     class Meta:
         model = UserModel
 
+    user_id = LazyFunction(uuid4)
     name = Faker('name')
     email = Faker('email')
     password_hash = Faker('password')
