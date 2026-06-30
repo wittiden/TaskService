@@ -33,4 +33,3 @@ class CreateUserCase:
 
     async def create_admin(self, name: str, email: str, password: str) -> SecurityUserInfoDTO:
         return await self._create(name, email, password, UserRoleEnum.ADMIN)
-
