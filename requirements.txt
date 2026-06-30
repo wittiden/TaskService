@@ -16,3 +16,6 @@ pydantic-settings~=2.14.2
 asyncpg~=0.31.0
 sqlalchemy~=2.0.51
 alembic~=1.18.5
+
+#security
+bcrypt~=5.0.0

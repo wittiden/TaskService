@@ -32,7 +32,7 @@ class UserAuditModel(Base):
 
     __tablename__ = 'user_audits'
 
-    users_audit_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    user_audits_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey('users.user_id', ondelete='cascade'), nullable=False)
     field_name: Mapped[str] = mapped_column(String(256), nullable=False)
     new_value: Mapped[Any] = mapped_column(JSON, nullable=False)
