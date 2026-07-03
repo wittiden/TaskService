@@ -1,4 +1,4 @@
-from app.common.security.base_exception import RouterError
+from app.common.exceptions.base_exception import RouterError
 
 
 class AuthRouterError(RouterError):
