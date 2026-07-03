@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.common.enums.user import UserRoleEnum
 from app.infrastructure.database.base import Base
+from app.infrastructure.database.model.refresh_token import RefreshTokenModel
 
 
 class UserModel(Base):
@@ -25,6 +26,7 @@ class UserModel(Base):
     blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user_audits: Mapped[list[UserAuditModel]] = relationship('UserAuditModel', back_populates='user', uselist=True, lazy='selectin', cascade='all, delete-orphan')
+    refresh_tokens: Mapped[list[RefreshTokenModel]] = relationship('RefreshTokenModel', back_populates='user', uselist=True, lazy='selectin', cascade='all, delete-orphan')
 
 
 class UserAuditModel(Base):
