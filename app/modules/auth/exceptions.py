@@ -6,6 +6,11 @@ class AuthRouterError(RouterError):
     status_code = 400
 
 
+class PassVerifyError(AuthRouterError):
+    title = 'Pass verify error'
+    status_code = 401
+
+
 class InvalidTokenSignatureError(AuthRouterError):
     title = 'Invalid token signature error'
     status_code = 401

@@ -1,5 +1,5 @@
 from datetime import datetime, UTC
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import String, ForeignKey, DateTime, Uuid, JSON, Enum
@@ -7,7 +7,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.common.enums.user import UserRoleEnum
 from app.infrastructure.database.base import Base
-from app.infrastructure.database.model.refresh_token import RefreshTokenModel
+
+if TYPE_CHECKING:
+    from app.infrastructure.database.model.refresh_token import RefreshTokenModel
 
 
 class UserModel(Base):
@@ -26,7 +28,7 @@ class UserModel(Base):
     blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user_audits: Mapped[list[UserAuditModel]] = relationship('UserAuditModel', back_populates='user', uselist=True, lazy='selectin', cascade='all, delete-orphan')
-    refresh_tokens: Mapped[list[RefreshTokenModel]] = relationship('RefreshTokenModel', back_populates='user', uselist=True, lazy='selectin', cascade='all, delete-orphan')
+    refresh_tokens: Mapped[list['RefreshTokenModel']] = relationship('RefreshTokenModel', back_populates='user', uselist=True, lazy='selectin', cascade='all, delete-orphan')
 
 
 class UserAuditModel(Base):

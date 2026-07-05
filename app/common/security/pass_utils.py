@@ -1,6 +1,6 @@
 import bcrypt
 
-from app.modules.users.exceptions import PassVerifyError
+from app.modules.auth.exceptions import PassVerifyError
 
 
 def hash_pass(password: str) -> str:

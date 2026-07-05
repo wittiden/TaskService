@@ -1,13 +1,14 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import update
 
 from app.infrastructure.database.model.refresh_token import RefreshTokenModel
 
 
-class RefreshTokenCommandsRepository:
-    """Репозиторий для insert, update, delete команд"""
+class AuthCommandsRepository:
+    """Репозиторий для insert, alter, delete команд"""
 
     def __init__(self, async_session: AsyncSession) -> None:
         self._async_session = async_session
@@ -19,5 +20,12 @@ class RefreshTokenCommandsRepository:
         await self._async_session.flush()
         return refresh_token_model
 
-    async def update_refresh_token_revoked_param(self, refresh_token_id: UUID):
-        pass
+    async def alter_user_refresh_tokens_revoked_param(self, user_id: UUID, audience: str) -> None:
+        await self._async_session.execute(update(RefreshTokenModel)
+                                          .where(RefreshTokenModel.user_id == user_id, RefreshTokenModel.audience == audience, RefreshTokenModel.revoked_at.is_(None))
+                                          .values(revoked_at=datetime.now(UTC)))
+
+    async def alter_all_user_refresh_tokens_revoked_param(self, user_id: UUID) -> None:
+        await self._async_session.execute(update(RefreshTokenModel)
+                                          .where(RefreshTokenModel.user_id == user_id, RefreshTokenModel.revoked_at.is_(None))
+                                          .values(revoked_at=datetime.now(UTC)))

@@ -18,8 +18,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+#      redis:
+#        condition: service_healthy
     env_file:
       - .env
     healthcheck:
@@ -92,54 +92,54 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASS}
     volumes:
       - pgadmin_volume:/var/lib/pgadmin
-    profiles:
-      - pgadmin
+#    profiles:
+#      - pgadmin
     healthcheck:
       test: [ "CMD", "wget", "--spider", "http://localhost/misc/ping" ]
       interval: 30s
       timeout: 10s
       retries: 5
 
-  redis:
-    image: redis:8.0-alpine
-    container_name: task_service_redis
-    restart: unless-stopped
-    stop_grace_period: 30s
-    command: redis-server --requirepass ${REDIS_PASS}
-    ports:
-      - "${REDIS_PORT}:6379"
-    networks:
-      - network
-    volumes:
-      - redis_volume:/data
-    environment:
-      - REDIS_PASS=${REDIS_PASS}
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASS}", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+#  redis:
+#    image: redis:8.0-alpine
+#    container_name: task_service_redis
+#    restart: unless-stopped
+#    stop_grace_period: 30s
+#    command: redis-server --requirepass ${REDIS_PASS}
+#    ports:
+#      - "${REDIS_PORT}:6379"
+#    networks:
+#      - network
+#    volumes:
+#      - redis_volume:/data
+#    environment:
+#      - REDIS_PASS=${REDIS_PASS}
+#    healthcheck:
+#      test: ["CMD", "redis-cli", "-a", "${REDIS_PASS}", "ping"]
+#      interval: 5s
+#      timeout: 3s
+#      retries: 5
 
-  redisinsight:
-    image: redislabs/redisinsight:3.6
-    container_name: task_service_redisinsight
-    volumes:
-      - redisinsight_volume:/data
-    environment:
-      - RI_ENCRYPTION_KEY=${RI_ENCRYPTION_KEY}
-    ports:
-      - "${RI_PORT}:5540"
-    restart: unless-stopped
-    networks:
-      - network
-    stop_grace_period: 30s
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:5540 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    profiles:
-      - redisinsight
+#  redisinsight:
+#    image: redislabs/redisinsight:3.6
+#    container_name: task_service_redisinsight
+#    volumes:
+#      - redisinsight_volume:/data
+#    environment:
+#      - RI_ENCRYPTION_KEY=${RI_ENCRYPTION_KEY}
+#    ports:
+#      - "${RI_PORT}:5540"
+#    restart: unless-stopped
+#    networks:
+#      - network
+#    stop_grace_period: 30s
+#    healthcheck:
+#      test: ["CMD-SHELL", "wget --spider -q http://localhost:5540 || exit 1"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#    profiles:
+#      - redisinsight
 
 
 volumes:

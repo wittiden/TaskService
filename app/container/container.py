@@ -3,10 +3,13 @@ from typing import AsyncGenerator
 from dishka import Provider, provide, Scope, AsyncContainer, make_async_container
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
 
-from app.common.security.jwt_config import TokenConfig
+from app.modules.auth.jwt_config import TokenConfig
 from app.infrastructure.database.config import DatabaseConfig
-from app.modules.auth.repository.commands import RefreshTokenCommandsRepository
-from app.modules.auth.repository.queries import RefreshTokenQueriesRepository
+from app.modules.auth.repository.commands import AuthCommandsRepository
+from app.modules.auth.repository.queries import AuthQueriesRepository
+from app.modules.auth.service.use_cases import ManageTokenCase, LoginUserCase
+from app.modules.sessions.repository.commands import SessionCommandsRepository
+from app.modules.sessions.repository.queries import SessionQueriesRepository
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.use_cases import CreateUserCase
@@ -81,8 +84,12 @@ class CommandsRepositoryProvider(Provider):
         return UserCommandsRepository(async_session)
 
     @provide
-    def auth_commands_repo(self, async_session: AsyncSession) -> RefreshTokenCommandsRepository:
-        return RefreshTokenCommandsRepository(async_session)
+    def auth_commands_repo(self, async_session: AsyncSession) -> AuthCommandsRepository:
+        return AuthCommandsRepository(async_session)
+
+    @provide
+    def session_commands_repo(self, async_session: AsyncSession) -> SessionCommandsRepository:
+        return SessionCommandsRepository(async_session)
 
 
 class QueriesRepositoryProvider(Provider):
@@ -95,8 +102,12 @@ class QueriesRepositoryProvider(Provider):
         return UserQueriesRepository(async_session)
 
     @provide
-    def auth_queries_repo(self, async_session: AsyncSession) -> RefreshTokenQueriesRepository:
-        return RefreshTokenQueriesRepository(async_session)
+    def auth_queries_repo(self, async_session: AsyncSession) -> AuthQueriesRepository:
+        return AuthQueriesRepository(async_session)
+
+    @provide
+    def session_queries_repo(self, async_session: AsyncSession) -> SessionQueriesRepository:
+        return SessionQueriesRepository(async_session)
 
 
 class UserUseCasesProvider(Provider):
@@ -111,6 +122,16 @@ class UserUseCasesProvider(Provider):
 
 class AuthUseCasesProvider(Provider):
     """Провайдер по созданию аутентификационных кейсов"""
+
+    scope = Scope.REQUEST
+
+    @provide
+    def manage_token_case(self, token_config: TokenConfig, auth_commands: AuthCommandsRepository) -> ManageTokenCase:
+        return ManageTokenCase(token_config, auth_commands)
+
+    @provide
+    def login_user_case(self, auth_queries: AuthQueriesRepository, manage_token_case: ManageTokenCase) -> LoginUserCase:
+        return LoginUserCase(manage_token_case, auth_queries)
 
 
 def create_async_container() -> AsyncContainer:

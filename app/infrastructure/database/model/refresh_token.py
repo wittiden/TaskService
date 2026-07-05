@@ -1,11 +1,14 @@
 from uuid import UUID, uuid4
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Integer, String, DateTime, Uuid, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database.base import Base
-from app.infrastructure.database.model.user import UserModel
+
+if TYPE_CHECKING:
+    from app.infrastructure.database.model.user import UserModel
 
 
 class RefreshTokenModel(Base):
@@ -21,4 +24,4 @@ class RefreshTokenModel(Base):
     audience: Mapped[str] = mapped_column(String(256), nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    user: Mapped[UserModel] = relationship('UserModel', back_populates='refresh_tokens', uselist=False, lazy='selectin')
+    user: Mapped['UserModel'] = relationship('UserModel', back_populates='refresh_tokens', uselist=False, lazy='selectin')

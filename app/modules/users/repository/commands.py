@@ -6,7 +6,7 @@ from app.infrastructure.database.model.user import UserModel
 
 
 class UserCommandsRepository:
-    """Репозиторий для insert, update, delete запросов"""
+    """Репозиторий для insert, alter, delete запросов"""
 
     def __init__(self, async_session: AsyncSession) -> None:
         self._async_session = async_session

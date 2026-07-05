@@ -33,3 +33,19 @@ class CreateUserCase:
 
     async def create_admin(self, name: str, email: str, password: str) -> SecurityUserInfoDTO:
         return await self._create(name, email, password, UserRoleEnum.ADMIN)
+
+
+class UpdateUserCase:
+    """Кейс по обновлению информации пользователя"""
+
+
+class DeleteUserCase:
+    """Кейс по удалению пользователя"""
+
+
+class ManageUserCase:
+    """Кейс по менедженгу пользователей"""
+
+
+class ShowUserCase:
+    """Кейс по показу информации пользователей"""
