@@ -13,7 +13,7 @@ def app_exception_handler(request: Request, exc: Exception) -> JSONResponse:
             content={
                 'path': path,
                 'title': exc.title,
-                'detail': exc.detail,
+                'details': exc.details,
             }
         )
 
@@ -22,6 +22,6 @@ def app_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         content={
             'path': path,
             'title': 'Internal Server Error',
-            'detail': 'An unexpected error occurred',
+            'details': 'An unexpected error occurred',
         }
     )
