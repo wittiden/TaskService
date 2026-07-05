@@ -39,4 +39,3 @@ class UserGuards:
     def require_user_closed(user: UserModel | None) -> None:
         if user is None:
             raise UserClosedError('User not authorize due to closed account')
-

@@ -45,3 +45,7 @@ class FullUserAuditInfoDTO(BaseModel):
     new_value: Any
     old_value: Any | None
     changed_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )

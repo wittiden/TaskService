@@ -9,6 +9,7 @@ from app.modules.auth.repository.commands import RefreshTokenCommandsRepository
 from app.modules.auth.repository.queries import RefreshTokenQueriesRepository
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
+from app.modules.users.service.use_cases import CreateUserCase
 
 
 class DatabaseConfigProvider(Provider):
@@ -100,6 +101,12 @@ class QueriesRepositoryProvider(Provider):
 
 class UserUseCasesProvider(Provider):
     """Провайдер по созданию кейсов пользователя"""
+
+    scope = Scope.REQUEST
+
+    @provide
+    def create_user_case(self, user_commands: UserCommandsRepository) -> CreateUserCase:
+        return CreateUserCase(user_commands)
 
 
 class AuthUseCasesProvider(Provider):
