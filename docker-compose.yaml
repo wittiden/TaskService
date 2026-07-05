@@ -147,10 +147,10 @@ volumes:
     name: task_service_db_volume
   pgadmin_volume:
     name: task_service_pgadmin_volume
-  redis_volume:
-    name: task_service_redis_volume
-  redisinsight_volume:
-    name: task_service_redisinsight_volume
+#  redis_volume:
+#    name: task_service_redis_volume
+#  redisinsight_volume:
+#    name: task_service_redisinsight_volume
 
 
 networks:

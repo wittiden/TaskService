@@ -3,7 +3,7 @@ from fastapi import FastAPI
 
 from app.bootstrap.routers import setup_routers
 from app.container.container import async_container
-from app.infrastructure.https.lifespan import lifespan
+from app.infrastructure.http.lifespan import lifespan
 
 
 def setup_application() -> FastAPI:
