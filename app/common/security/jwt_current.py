@@ -29,6 +29,6 @@ async def get_current_vip(case: FromDishka[ShowCurrentUserCase], token: str = De
     return await case.current_vip(token)
 
 
-CurrentStandard = Annotated[FullUserInfoDTO, Depends(get_current_standard)]
+CurrentUser = Annotated[FullUserInfoDTO, Depends(get_current_standard)]
 CurrentAdmin = Annotated[FullUserInfoDTO, Depends(get_current_admin)]
 CurrentVip= Annotated[FullUserInfoDTO, Depends(get_current_vip)]

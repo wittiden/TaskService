@@ -26,3 +26,6 @@ pyjwt~=2.13.0
 
 #logger
 loguru~=0.7.3
+
+#pre-commit pipeline
+ruff~=0.15.20

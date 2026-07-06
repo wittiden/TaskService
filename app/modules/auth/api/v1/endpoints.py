@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from dishka.integrations.fastapi import FromDishka, inject
 
-from app.common.security.jwt_current import CurrentStandard, CurrentAdmin, CurrentVip
+from app.common.security.jwt_current import CurrentUser
 from app.modules.auth.contracts.dtos import TokenInfoDTO
 from app.modules.auth.contracts.schemas import LoginUserSchema, RefreshSchema
 from app.modules.auth.service.use_cases import LoginUserCase, LogoutUserCase, RefreshUserCase
@@ -17,13 +17,13 @@ async def login_user_endpoint(schema: LoginUserSchema, case: FromDishka[LoginUse
 
 @auth_router.post('/logout', summary='Logout user device')
 @inject
-async def logout_user_device_endpoint(current_user: CurrentStandard | CurrentAdmin | CurrentVip, case: FromDishka[LogoutUserCase]) -> None:
+async def logout_user_device_endpoint(current_user: CurrentUser, case: FromDishka[LogoutUserCase]) -> None:
     return await case.logout_user_device(current_user)
 
 
-@auth_router.post('/logout', summary='Logout all user device')
+@auth_router.post('/logout-all', summary='Logout all user device')
 @inject
-async def logout_all_user_device_endpoint(current_user: CurrentStandard | CurrentAdmin | CurrentVip, case: FromDishka[LogoutUserCase]) -> None:
+async def logout_all_user_device_endpoint(current_user: CurrentUser, case: FromDishka[LogoutUserCase]) -> None:
     return await case.logout_all_user_devices(current_user)
 
 
