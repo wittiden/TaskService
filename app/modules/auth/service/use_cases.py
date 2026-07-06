@@ -1,6 +1,6 @@
 from typing import Any
 from datetime import datetime, UTC, timedelta
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 import jwt
 from jwt import InvalidSignatureError, InvalidAudienceError, InvalidAlgorithmError, InvalidKeyError, DecodeError, \
@@ -86,12 +86,16 @@ class ManageTokenCase:
             key=self._token_config.refresh_token_private_key,
         )
 
+        user_id: UUID = payload['sub']
+        issued_at: datetime = payload['iat']
+        expired_at: datetime = payload['exp']
+        audience = self._token_config.REFRESH_TOKEN_AUDIENCE
         await self._auth_commands.insert_refresh_token_data(
             refresh_token_id=token_id,
-            user_id=payload['sub'],
-            issued_at=payload['iat'],
-            expired_at=payload['exp'],
-            audience=self._token_config.REFRESH_TOKEN_AUDIENCE,
+            user_id=user_id,
+            issued_at=issued_at,
+            expired_at=expired_at,
+            audience=audience,
         )
 
         return refresh_token
