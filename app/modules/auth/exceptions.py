@@ -44,3 +44,13 @@ class TokenInvalidError(AuthRouterError):
 class ForbiddenError(AuthRouterError):
     title = 'Forbidden error'
     status_code = 403
+
+
+class InvalidTokenVersionError(AuthRouterError):
+    title = 'Invalid token version error'
+    status_code = 409
+
+
+class RevokedTokenError(AuthRouterError):
+    title = 'Revoked token error'
+    status_code = 409

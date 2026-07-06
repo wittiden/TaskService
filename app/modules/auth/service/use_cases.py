@@ -9,7 +9,8 @@ from jwt import InvalidSignatureError, InvalidAudienceError, InvalidAlgorithmErr
 from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
 from app.modules.auth.jwt_config import TokenConfig
 from app.modules.auth.exceptions import InvalidTokenSignatureError, InvalidTokenAudienceError, \
-    InvalidTokenAlgorithmError, InvalidTokenKeyError, DecodeTokenError, TokenInvalidError
+    InvalidTokenAlgorithmError, InvalidTokenKeyError, DecodeTokenError, TokenInvalidError, InvalidTokenVersionError, \
+    RevokedTokenError
 from app.common.enums.user import UserRoleEnum
 from app.common.security.pass_utils import verify_pass
 from app.modules.auth.contracts.dtos import TokenInfoDTO
@@ -91,7 +92,6 @@ class ManageTokenCase:
             issued_at=payload['iat'],
             expired_at=payload['exp'],
             audience=self._token_config.REFRESH_TOKEN_AUDIENCE,
-            version=self._token_config.REFRESH_TOKEN_VERSION,
         )
 
         return refresh_token
@@ -157,11 +157,11 @@ class LogoutUserCase:
         self._token_config = token_config
         self._current_user_redis_commands = current_user_redis_commands
 
-    async def logout_user(self, current_user: FullUserInfoDTO) -> None:
+    async def logout_user_device(self, current_user: FullUserInfoDTO) -> None:
         await self._auth_commands.alter_user_refresh_tokens_revoked_param(current_user.user_id, self._token_config.REFRESH_TOKEN_AUDIENCE)
         await self._current_user_redis_commands.delete_current_user(current_user.user_id)
 
-    async def logout_all_users(self, current_user: FullUserInfoDTO) -> None:
+    async def logout_all_user_devices(self, current_user: FullUserInfoDTO) -> None:
         await self._auth_commands.alter_all_user_refresh_tokens_revoked_param(current_user.user_id)
         await self._current_user_redis_commands.delete_current_user(current_user.user_id)
 
@@ -169,8 +169,54 @@ class LogoutUserCase:
 class RefreshUserCase:
     """Кейс по обновлению токенов пользователя"""
 
-    async def refresh(self):
-        pass
+    def __init__(self, manage_token_case: ManageTokenCase, auth_queries: AuthQueriesRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository, token_config: TokenConfig, auth_commands: AuthCommandsRepository) -> None:
+        self._manage_token_case = manage_token_case
+        self._auth_queries = auth_queries
+        self._current_user_redis_commands = current_user_redis_commands
+        self._token_config = token_config
+        self._auth_commands = auth_commands
+
+    async def refresh(self, refresh_token: str) -> TokenInfoDTO:
+        refresh_payload = self._manage_token_case.decode_refresh_token(refresh_token)
+        user_id = refresh_payload['sub']
+        version = refresh_payload['version']
+        refresh_token_id = refresh_payload['jti']
+
+        if not version == self._token_config.REFRESH_TOKEN_VERSION:
+            raise InvalidTokenVersionError('Old token version')
+
+        revoked_at = await self._auth_queries.select_refresh_token_revoked_by_id(refresh_token_id)
+        if revoked_at is not None:
+            raise RevokedTokenError('Token was burned before')
+
+        user = await self._current_user_redis_commands.get_current_user(user_id)
+        if user is None:
+            columns = await self._auth_queries.select_user_role_by_id(user_id)
+            columns = UserGuards.require_columns_exist(columns)
+            UserGuards.require_user_in_columns_blocked(columns)
+            UserGuards.require_user_in_columns_closed(columns)
+
+            role = columns['role']
+        else:
+            UserGuards.require_user_blocked(user)
+            UserGuards.require_user_closed(user)
+
+            role = user.role
+
+        new_access_payload = {
+            'sub': str(user_id),
+            'role': role
+        }
+        new_refresh_payload = {
+            'sub': str(user_id),
+        }
+
+        new_refresh_token = await self._manage_token_case.encode_refresh_token(new_refresh_payload)
+        new_access_token = self._manage_token_case.encode_access_token(new_access_payload)
+
+        await self._auth_commands.alter_refresh_token_revoked_param(refresh_token_id)
+
+        return TokenInfoDTO(access_token=new_access_token, refresh_token=new_refresh_token)
 
 
 class ShowCurrentUserCase:

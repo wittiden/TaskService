@@ -2,7 +2,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Integer, String, DateTime, Uuid, ForeignKey
+from sqlalchemy import String, DateTime, Uuid, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database.base import Base
@@ -22,6 +22,5 @@ class RefreshTokenModel(Base):
     expired_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     audience: Mapped[str] = mapped_column(String(256), nullable=False)
-    version: Mapped[int] = mapped_column(Integer, nullable=False)
 
     user: Mapped['UserModel'] = relationship('UserModel', back_populates='refresh_tokens', uselist=False, lazy='selectin')

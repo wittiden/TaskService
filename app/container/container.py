@@ -10,7 +10,8 @@ from app.modules.auth.jwt_config import TokenConfig
 from app.infrastructure.database.config import DatabaseConfig
 from app.modules.auth.repository.commands import AuthCommandsRepository
 from app.modules.auth.repository.queries import AuthQueriesRepository
-from app.modules.auth.service.use_cases import ManageTokenCase, LoginUserCase, ShowCurrentUserCase, LogoutUserCase
+from app.modules.auth.service.use_cases import ManageTokenCase, LoginUserCase, ShowCurrentUserCase, LogoutUserCase, \
+    RefreshUserCase
 from app.modules.sessions.repository.commands import SessionCommandsRepository
 from app.modules.sessions.repository.queries import SessionQueriesRepository
 from app.modules.users.repository.commands import UserCommandsRepository
@@ -178,6 +179,10 @@ class AuthUseCasesProvider(Provider):
     @provide
     def logout_user_case(self, auth_commands: AuthCommandsRepository, token_config: TokenConfig, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> LogoutUserCase:
         return LogoutUserCase(auth_commands, token_config, current_user_redis_commands)
+
+    @provide
+    def refresh_user_case(self, auth_queries: AuthQueriesRepository, auth_commands: AuthCommandsRepository, manage_token_case: ManageTokenCase, token_config: TokenConfig, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> RefreshUserCase:
+        return RefreshUserCase(manage_token_case, auth_queries, current_user_redis_commands, token_config, auth_commands)
 
     @provide
     def show_current_user_case(self, manage_token_case: ManageTokenCase, auth_queries: AuthQueriesRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> ShowCurrentUserCase:
