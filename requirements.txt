@@ -17,6 +17,9 @@ asyncpg~=0.31.0
 sqlalchemy~=2.0.51
 alembic~=1.18.5
 
+#cache
+redis~=8.0.1
+
 #security
 bcrypt~=5.0.0
 pyjwt~=2.13.0

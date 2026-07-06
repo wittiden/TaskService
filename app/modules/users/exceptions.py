@@ -24,3 +24,8 @@ class UserBlockedError(UserRouterError):
 class UserClosedError(UserRouterError):
     title = 'User closed error'
     status_code = 401
+
+
+class UserNotFoundError(UserRouterError):
+    title = 'User not found error'
+    status_code = 404

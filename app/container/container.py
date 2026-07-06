@@ -1,13 +1,16 @@
 from typing import AsyncGenerator
 
+from redis.asyncio import Redis
 from dishka import Provider, provide, Scope, AsyncContainer, make_async_container
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
 
+from app.infrastructure.redis.config import RedisConfig
+from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
 from app.modules.auth.jwt_config import TokenConfig
 from app.infrastructure.database.config import DatabaseConfig
 from app.modules.auth.repository.commands import AuthCommandsRepository
 from app.modules.auth.repository.queries import AuthQueriesRepository
-from app.modules.auth.service.use_cases import ManageTokenCase, LoginUserCase
+from app.modules.auth.service.use_cases import ManageTokenCase, LoginUserCase, ShowCurrentUserCase, LogoutUserCase
 from app.modules.sessions.repository.commands import SessionCommandsRepository
 from app.modules.sessions.repository.queries import SessionQueriesRepository
 from app.modules.users.repository.commands import UserCommandsRepository
@@ -66,12 +69,51 @@ class AsyncSessionProvider(Provider):
             yield async_session
 
 
+class RedisConfigProvider(Provider):
+    """Провайдер по созданию конфигурации Redis"""
+
+    @provide(scope=Scope.APP)
+    def redis_config(self) -> RedisConfig:
+        return RedisConfig()
+
+
+class RedisClientProvider(Provider):
+    """Провайдер по созданию клиента Redis"""
+
+    @provide(scope=Scope.APP)
+    async def redis_client(self, redis_config: RedisConfig) -> AsyncGenerator[Redis, None]:
+        redis = Redis(
+            host=redis_config.REDIS_HOST,
+            port=redis_config.REDIS_PORT,
+            password=redis_config.REDIS_PASS,
+            db=redis_config.redis_db_url,
+            decode_responses=True,
+            socket_timeout=3,
+            socket_connect_timeout=1,
+        )
+
+        try:
+            yield redis
+        finally:
+            await redis.aclose()
+
+
 class TokenConfigProvider(Provider):
     """Провайдер по созданию конфигурации токенов"""
 
     @provide(scope=Scope.APP)
     def token_config(self) -> TokenConfig:
         return TokenConfig()
+
+
+class RedisRepositoriesProvider(Provider):
+    """Провайдер по созданию репозиториев Redis"""
+
+    scope = Scope.APP
+
+    @provide
+    def current_user_redis_commands(self, redis_client: Redis) -> CurrentUserRedisCommandsRepository:
+        return CurrentUserRedisCommandsRepository(redis_client)
 
 
 class CommandsRepositoryProvider(Provider):
@@ -133,6 +175,14 @@ class AuthUseCasesProvider(Provider):
     def login_user_case(self, auth_queries: AuthQueriesRepository, manage_token_case: ManageTokenCase) -> LoginUserCase:
         return LoginUserCase(manage_token_case, auth_queries)
 
+    @provide
+    def logout_user_case(self, auth_commands: AuthCommandsRepository, token_config: TokenConfig, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> LogoutUserCase:
+        return LogoutUserCase(auth_commands, token_config, current_user_redis_commands)
+
+    @provide
+    def show_current_user_case(self, manage_token_case: ManageTokenCase, auth_queries: AuthQueriesRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> ShowCurrentUserCase:
+        return ShowCurrentUserCase(manage_token_case, auth_queries, current_user_redis_commands)
+
 
 def create_async_container() -> AsyncContainer:
     return make_async_container(
@@ -140,7 +190,10 @@ def create_async_container() -> AsyncContainer:
         DatabaseEngineProvider(),
         AsyncSessionmakerProvider(),
         AsyncSessionProvider(),
+        RedisConfigProvider(),
+        RedisClientProvider(),
         TokenConfigProvider(),
+        RedisRepositoriesProvider(),
         CommandsRepositoryProvider(),
         QueriesRepositoryProvider(),
         UserUseCasesProvider(),

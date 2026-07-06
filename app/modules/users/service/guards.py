@@ -1,4 +1,5 @@
 from app.infrastructure.database.model.user import UserModel
+from app.modules.users.contracts.dtos import FullUserInfoDTO
 from app.modules.users.exceptions import InvalidUserDataError, UserColumnsNotFoundError, UserBlockedError, \
     UserClosedError
 
@@ -31,11 +32,11 @@ class UserGuards:
             raise UserClosedError('User not authorize due to closed account')
 
     @staticmethod
-    def require_user_blocked(user: UserModel | None) -> None:
+    def require_user_blocked(user: UserModel | FullUserInfoDTO | None) -> None:
         if user is None:
             raise UserBlockedError('User not authorize due to blocked account')
 
     @staticmethod
-    def require_user_closed(user: UserModel | None) -> None:
+    def require_user_closed(user: UserModel | FullUserInfoDTO | None) -> None:
         if user is None:
             raise UserClosedError('User not authorize due to closed account')
