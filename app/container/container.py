@@ -87,7 +87,7 @@ class RedisClientProvider(Provider):
             host=redis_config.REDIS_HOST,
             port=redis_config.REDIS_PORT,
             password=redis_config.REDIS_PASS,
-            db=redis_config.redis_db_url,
+            db=redis_config.REDIS_DB,
             decode_responses=True,
             socket_timeout=3,
             socket_connect_timeout=1,

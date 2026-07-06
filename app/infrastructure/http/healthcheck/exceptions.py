@@ -6,16 +6,16 @@ class HealthRouterError(RouterError):
     status_code = 400
 
 
-class ApplicationError(HealthRouterError):
-    title = 'Application error'
+class ApplicationHealthError(HealthRouterError):
+    title = 'Application health error'
     status_code = 500
 
 
-class DatabaseError(HealthRouterError):
-    title = 'Database error'
+class DatabaseHealthError(HealthRouterError):
+    title = 'Database health error'
     status_code = 500
 
 
-class RedisError(HealthRouterError):
-    title = 'Redis error'
+class RedisHealthError(HealthRouterError):
+    title = 'Redis health error'
     status_code = 500

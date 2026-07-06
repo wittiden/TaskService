@@ -6,3 +6,9 @@ class LoginUserSchema(BaseModel):
 
     email: EmailStr
     password: str
+
+
+class RefreshSchema(BaseModel):
+    """Схема для обновления токена"""
+
+    refresh_token: str
