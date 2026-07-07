@@ -23,20 +23,20 @@ class UserGuards:
 
     @staticmethod
     def require_user_in_columns_blocked(columns: dict) -> None:
-        if columns['blocked_at'] is None:
+        if columns['blocked_at'] is not None:
             raise UserBlockedError('User not authorize due to blocked account')
 
     @staticmethod
     def require_user_in_columns_closed(columns: dict) -> None:
-        if columns['closed_at'] is None:
+        if columns['closed_at'] is not None:
             raise UserClosedError('User not authorize due to closed account')
 
     @staticmethod
-    def require_user_blocked(user: UserModel | FullUserInfoDTO | None) -> None:
-        if user is None:
+    def require_user_blocked(user: UserModel | FullUserInfoDTO) -> None:
+        if user.blocked_at is not None:
             raise UserBlockedError('User not authorize due to blocked account')
 
     @staticmethod
-    def require_user_closed(user: UserModel | FullUserInfoDTO | None) -> None:
-        if user is None:
+    def require_user_closed(user: UserModel | FullUserInfoDTO) -> None:
+        if user.closed_at is not None:
             raise UserClosedError('User not authorize due to closed account')

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSessio
 
 from app.infrastructure.redis.config import RedisConfig
 from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
+from app.infrastructure.unit_of_work.uow import UnitOfWork
 from app.modules.auth.jwt_config import TokenConfig
 from app.infrastructure.database.config import DatabaseConfig
 from app.modules.auth.repository.commands import AuthCommandsRepository
@@ -117,6 +118,15 @@ class RedisRepositoriesProvider(Provider):
         return CurrentUserRedisCommandsRepository(redis_client)
 
 
+class UnitOfWorkProvider(Provider):
+    """Провайдер по созданию реализации паттерна uow"""
+
+    @provide(scope=Scope.REQUEST)
+    async def unit_of_work(self, async_session: AsyncSession) -> AsyncGenerator[UnitOfWork, None]:
+        async with UnitOfWork(async_session) as uow:
+            yield uow
+
+
 class CommandsRepositoryProvider(Provider):
     """Провайдер по созданию commands репозиториев"""
 
@@ -198,6 +208,7 @@ def create_async_container() -> AsyncContainer:
         RedisConfigProvider(),
         RedisClientProvider(),
         TokenConfigProvider(),
+        UnitOfWorkProvider(),
         RedisRepositoriesProvider(),
         CommandsRepositoryProvider(),
         QueriesRepositoryProvider(),

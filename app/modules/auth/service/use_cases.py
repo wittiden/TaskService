@@ -49,7 +49,7 @@ class ManageTokenCase:
     def decode_access_token(self, access_token: str) -> dict[str, Any]:
         try:
             return jwt.decode(
-                jtw=access_token,
+                jwt=access_token,
                 algorithms=[self._token_config.ACCESS_TOKEN_ALGORITHM,],
                 key=self._token_config.access_token_public_key,
                 audience=self._token_config.ACCESS_TOKEN_AUDIENCE,
@@ -103,7 +103,7 @@ class ManageTokenCase:
     def decode_refresh_token(self, refresh_token: str) -> dict[str, Any]:
         try:
             return jwt.decode(
-                jtw=refresh_token,
+                jwt=refresh_token,
                 algorithms=[self._token_config.REFRESH_TOKEN_ALGORITHM,],
                 key=self._token_config.refresh_token_public_key,
                 audience=self._token_config.REFRESH_TOKEN_AUDIENCE,
