@@ -2,7 +2,8 @@ from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.user import UserRoleEnum
 from app.common.security.pass_utils import hash_pass
-from app.modules.users.contracts.dtos import SecurityUserInfoDTO
+from app.modules.auth.service.use_cases import LogoutUserCase
+from app.modules.users.contracts.dtos import SecurityUserInfoDTO, FullUserInfoDTO
 from app.modules.users.exceptions import InvalidUserDataError
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.service.guards import UserGuards
@@ -41,6 +42,17 @@ class UpdateUserCase:
 
 class DeleteUserCase:
     """Кейс по удалению пользователя"""
+
+    def __init__(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase) -> None:
+        self._user_commands = user_commands
+        self._logout_user_case = logout_user_case
+
+    async def close_my_account(self, current_user: FullUserInfoDTO):
+        await self._user_commands.alter_user_closed_param(current_user.user_id)
+        await self._logout_user_case.logout_all_user_devices(current_user)
+
+    async def delete_my_account(self):
+        pass
 
 
 class ManageUserCase:

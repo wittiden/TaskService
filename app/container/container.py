@@ -17,7 +17,7 @@ from app.modules.sessions.repository.commands import SessionCommandsRepository
 from app.modules.sessions.repository.queries import SessionQueriesRepository
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
-from app.modules.users.service.use_cases import CreateUserCase
+from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase
 
 
 class DatabaseConfigProvider(Provider):
@@ -163,16 +163,6 @@ class QueriesRepositoryProvider(Provider):
         return SessionQueriesRepository(async_session)
 
 
-class UserUseCasesProvider(Provider):
-    """Провайдер по созданию кейсов пользователя"""
-
-    scope = Scope.REQUEST
-
-    @provide
-    def create_user_case(self, user_commands: UserCommandsRepository) -> CreateUserCase:
-        return CreateUserCase(user_commands)
-
-
 class AuthUseCasesProvider(Provider):
     """Провайдер по созданию аутентификационных кейсов"""
 
@@ -199,6 +189,20 @@ class AuthUseCasesProvider(Provider):
         return ShowCurrentUserCase(manage_token_case, auth_queries, current_user_redis_commands)
 
 
+class UserUseCasesProvider(Provider):
+    """Провайдер по созданию кейсов пользователя"""
+
+    scope = Scope.REQUEST
+
+    @provide
+    def create_user_case(self, user_commands: UserCommandsRepository) -> CreateUserCase:
+        return CreateUserCase(user_commands)
+
+    @provide
+    def delete_user_case(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase) -> DeleteUserCase:
+        return DeleteUserCase(user_commands, logout_user_case)
+
+
 def create_async_container() -> AsyncContainer:
     return make_async_container(
         DatabaseConfigProvider(),
@@ -212,8 +216,8 @@ def create_async_container() -> AsyncContainer:
         RedisRepositoriesProvider(),
         CommandsRepositoryProvider(),
         QueriesRepositoryProvider(),
-        UserUseCasesProvider(),
         AuthUseCasesProvider(),
+        UserUseCasesProvider(),
     )
 
 async_container = create_async_container()
