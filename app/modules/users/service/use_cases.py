@@ -59,5 +59,5 @@ class ManageUserCase:
     """Кейс по менедженгу пользователей"""
 
 
-class ShowUserCase:
+class ShowUserCase: 
     """Кейс по показу информации пользователей"""

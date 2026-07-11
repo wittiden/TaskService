@@ -38,25 +38,6 @@ services:
         - action: rebuild
           path: requirements.txt
 
-  migrations:
-    image: task_service_migrations:1.0.0
-    container_name: task_service_migrations
-    build:
-      context: .
-    command: ["alembic", "upgrade", "head"]
-    restart: no
-    volumes:
-      - .:/app
-    networks:
-      - network
-    env_file:
-      - .env
-    depends_on:
-      db:
-        condition: service_healthy
-    profiles:
-      - migrations
-
   db:
     image: postgres:16-alpine
     container_name: task_service_db

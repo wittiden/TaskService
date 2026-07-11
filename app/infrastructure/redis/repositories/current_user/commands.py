@@ -11,7 +11,7 @@ class CurrentUserRedisCommandsRepository:
     def __init__(self, redis_client: Redis) -> None:
         self._redis_client = redis_client
 
-    async def set_current_user(self, current_user: FullUserInfoDTO, ttl: int = 300) -> None:
+    async def set_current_user(self, current_user: FullUserInfoDTO, ttl: int = 1800) -> None:
         name = f'user:{current_user.user_id}'
         key = current_user.model_dump_json()
 

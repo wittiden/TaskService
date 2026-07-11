@@ -23,4 +23,4 @@ class RefreshTokenModel(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     audience: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
 
-    user: Mapped['UserModel'] = relationship('UserModel', back_populates='refresh_tokens', uselist=False, lazy='selectin')
+    user: Mapped['UserModel'] = relationship('UserModel', back_populates='refresh_tokens', uselist=False, lazy='joined')
