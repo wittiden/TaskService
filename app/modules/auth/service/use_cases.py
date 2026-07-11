@@ -169,6 +169,10 @@ class LogoutUserCase:
         await self._auth_commands.alter_all_user_refresh_tokens_revoked_param(current_user.user_id)
         await self._current_user_redis_commands.delete_current_user(current_user.user_id)
 
+    async def logout_all_user_devices_by_id(self, user_id: UUID) -> None:
+        await self._auth_commands.alter_all_user_refresh_tokens_revoked_param(user_id)
+        await self._current_user_redis_commands.delete_current_user(user_id)
+
 
 class RefreshUserCase:
     """Кейс по обновлению токенов пользователя"""

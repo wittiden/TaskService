@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.user import UserRoleEnum
@@ -6,6 +8,7 @@ from app.modules.auth.service.use_cases import LogoutUserCase
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO, FullUserInfoDTO
 from app.modules.users.exceptions import InvalidUserDataError
 from app.modules.users.repository.commands import UserCommandsRepository
+from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.guards import UserGuards
 
 
@@ -43,21 +46,64 @@ class UpdateUserCase:
 class DeleteUserCase:
     """Кейс по удалению пользователя"""
 
-    def __init__(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase) -> None:
+    def __init__(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository) -> None:
         self._user_commands = user_commands
         self._logout_user_case = logout_user_case
+        self._user_queries = user_queries
 
-    async def close_my_account(self, current_user: FullUserInfoDTO):
+    async def close_my_account(self, current_user: FullUserInfoDTO) -> None:
         await self._user_commands.alter_user_closed_param(current_user.user_id)
         await self._logout_user_case.logout_all_user_devices(current_user)
 
-    async def delete_my_account(self):
-        pass
+    async def delete_account(self, user_id: UUID) -> None:
+        columns = await self._user_queries.select_user_close_by_id(user_id)
+        columns = UserGuards.require_columns_exist(columns)
+        UserGuards.require_user_in_columns_closed(columns)
+
+        await self._user_commands.delete_user_by_id(user_id)
+        await self._logout_user_case.logout_all_user_devices_by_id(user_id)
 
 
 class ManageUserCase:
     """Кейс по менедженгу пользователей"""
 
+    def __init__(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase) -> None:
+        self._user_commands = user_commands
+        self._logout_user_case = logout_user_case
+
+    async def block_user(self, user_id: UUID) -> FullUserInfoDTO:
+        user = await self._user_commands.alter_block_user_by_id(user_id)
+        user = UserGuards.require_user_exist(user)
+
+        await self._logout_user_case.logout_all_user_devices_by_id(user_id)
+
+        return FullUserInfoDTO.model_validate(user)
+
+    async def unblock_user(self, user_id: UUID) -> FullUserInfoDTO:
+        user = await self._user_commands.alter_unblock_user_by_id(user_id)
+        user = UserGuards.require_user_exist(user)
+
+        await self._logout_user_case.logout_all_user_devices_by_id(user_id)
+
+        return FullUserInfoDTO.model_validate(user)
+
 
 class ShowUserCase: 
     """Кейс по показу информации пользователей"""
+
+    def __init__(self, user_queries: UserQueriesRepository) -> None:
+        self._user_queries = user_queries
+
+    async def show_me(self, current_user: FullUserInfoDTO) -> SecurityUserInfoDTO:
+        return SecurityUserInfoDTO.model_validate(current_user)
+
+    async def show_user_by_id(self, user_id: UUID) -> FullUserInfoDTO:
+        user = await self._user_queries.select_user_by_id(user_id)
+        user = UserGuards.require_user_exist(user)
+
+        return FullUserInfoDTO.model_validate(user)
+
+    async def show_users(self, offset: int = 0, limit: int = 100) -> list[FullUserInfoDTO]:
+        users = await self._user_queries.select_users(offset, limit)
+
+        return [FullUserInfoDTO.model_validate(user) for user in users]

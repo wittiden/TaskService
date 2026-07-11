@@ -30,3 +30,23 @@ class UserCommandsRepository:
         await self._async_session.execute(update(UserModel)
                                           .where(UserModel.user_id == user_id, UserModel.closed_at.is_(None))
                                           .values(closed_at=datetime.now(UTC)))
+
+    async def delete_user_by_id(self, user_id: UUID) -> None:
+        await self._async_session.delete(user_id)
+        await self._async_session.flush()
+
+    async def alter_block_user_by_id(self, user_id: UUID) -> UserModel | None:
+        user = await self._async_session.execute(update(UserModel)
+                                          .where(UserModel.user_id == user_id, UserModel.blocked_at.is_(None))
+                                          .values(blocked_at=datetime.now(UTC))
+                                          .returning(UserModel))
+
+        return user.scalar_one_or_none()
+
+    async def alter_unblock_user_by_id(self, user_id: UUID) -> UserModel | None:
+        user = await self._async_session.execute(update(UserModel)
+                                                 .where(UserModel.user_id == user_id, UserModel.blocked_at.is_(not None))
+                                                 .values(blocked_at=None)
+                                                 .returning(UserModel))
+
+        return user.scalar_one_or_none()
