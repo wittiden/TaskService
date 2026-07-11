@@ -17,7 +17,7 @@ from app.modules.sessions.repository.commands import SessionCommandsRepository
 from app.modules.sessions.repository.queries import SessionQueriesRepository
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
-from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase
+from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase, ManageUserCase, ShowUserCase
 
 
 class DatabaseConfigProvider(Provider):
@@ -201,6 +201,14 @@ class UserUseCasesProvider(Provider):
     @provide
     def delete_user_case(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase) -> DeleteUserCase:
         return DeleteUserCase(user_commands, logout_user_case)
+
+    @provide
+    def manage_user_case(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository) -> ManageUserCase:
+        return ManageUserCase(user_commands, logout_user_case, user_queries)
+
+    @provide
+    def show_user_case(self, user_queries: UserQueriesRepository) -> ShowUserCase:
+        return ShowUserCase(user_queries)
 
 
 def create_async_container() -> AsyncContainer:

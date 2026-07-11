@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database.model import RefreshTokenModel
@@ -31,3 +31,11 @@ class AuthQueriesRepository:
     async def select_refresh_token_revoked_by_id(self, refresh_token_id: UUID) -> datetime | None:
         obj = await self._async_session.execute(select(RefreshTokenModel.revoked_at).where(RefreshTokenModel.refresh_token_id == refresh_token_id))
         return obj.scalar_one_or_none()
+
+    async def select_not_revoked_tokens_by_user_id(self, user_id: UUID) -> bool | None:
+        result = await self._async_session.execute(select(
+            exists().where(RefreshTokenModel.user_id == user_id, RefreshTokenModel.revoked_at.is_(None))
+        ))
+
+        return result.scalar()
+

@@ -53,4 +53,4 @@ class InvalidTokenVersionError(AuthRouterError):
 
 class RevokedTokenError(AuthRouterError):
     title = 'Revoked token error'
-    status_code = 409
+    status_code = 401

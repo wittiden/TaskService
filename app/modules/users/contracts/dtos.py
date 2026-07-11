@@ -34,18 +34,3 @@ class SecurityUserInfoDTO(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
     )
-
-
-class FullUserAuditInfoDTO(BaseModel):
-    """Схема для передачи полной информации аудита пользователя"""
-
-    user_audits_id: UUID
-    user_id: UUID
-    filed_name: str
-    new_value: Any
-    old_value: Any | None
-    changed_at: datetime
-
-    model_config = ConfigDict(
-        from_attributes=True,
-    )

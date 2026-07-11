@@ -6,7 +6,8 @@ from app.common.enums.user import UserRoleEnum
 from app.common.security.pass_utils import hash_pass
 from app.modules.auth.service.use_cases import LogoutUserCase
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO, FullUserInfoDTO
-from app.modules.users.exceptions import InvalidUserDataError
+from app.modules.users.exceptions import InvalidUserDataError, UserNotFoundError, UserAlreadyBlockedError, \
+    UserAlreadyUnblockedError
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.guards import UserGuards
@@ -46,32 +47,34 @@ class UpdateUserCase:
 class DeleteUserCase:
     """Кейс по удалению пользователя"""
 
-    def __init__(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository) -> None:
+    def __init__(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase) -> None:
         self._user_commands = user_commands
         self._logout_user_case = logout_user_case
-        self._user_queries = user_queries
 
     async def close_my_account(self, current_user: FullUserInfoDTO) -> None:
         await self._user_commands.alter_user_closed_param(current_user.user_id)
         await self._logout_user_case.logout_all_user_devices(current_user)
 
-    async def delete_account(self, user_id: UUID) -> None:
-        columns = await self._user_queries.select_user_close_by_id(user_id)
-        columns = UserGuards.require_columns_exist(columns)
-        UserGuards.require_user_in_columns_closed(columns)
-
-        await self._user_commands.delete_user_by_id(user_id)
+    async def delete_user_account(self, user_id: UUID) -> None:
+        deleted_obj_id = await self._user_commands.delete_closed_user_by_id(user_id)
+        if deleted_obj_id is None:
+            raise UserNotFoundError('User with spec parameters not found for deletion')
         await self._logout_user_case.logout_all_user_devices_by_id(user_id)
 
 
 class ManageUserCase:
     """Кейс по менедженгу пользователей"""
 
-    def __init__(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase) -> None:
+    def __init__(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository) -> None:
         self._user_commands = user_commands
         self._logout_user_case = logout_user_case
+        self._user_queries = user_queries
 
     async def block_user(self, user_id: UUID) -> FullUserInfoDTO:
+        blocked_at = await self._user_queries.select_user_block_param(user_id)
+        if blocked_at:
+            raise UserAlreadyBlockedError('User account blocked before')
+
         user = await self._user_commands.alter_block_user_by_id(user_id)
         user = UserGuards.require_user_exist(user)
 
@@ -80,10 +83,12 @@ class ManageUserCase:
         return FullUserInfoDTO.model_validate(user)
 
     async def unblock_user(self, user_id: UUID) -> FullUserInfoDTO:
+        blocked_at = await self._user_queries.select_user_block_param(user_id)
+        if blocked_at is None:
+            raise UserAlreadyUnblockedError('User account unblocked before')
+
         user = await self._user_commands.alter_unblock_user_by_id(user_id)
         user = UserGuards.require_user_exist(user)
-
-        await self._logout_user_case.logout_all_user_devices_by_id(user_id)
 
         return FullUserInfoDTO.model_validate(user)
 

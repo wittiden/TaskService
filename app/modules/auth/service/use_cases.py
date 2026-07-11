@@ -134,8 +134,8 @@ class LoginUserCase:
         columns = UserGuards.require_columns_exist(columns)
         verify_pass(password, columns['password_hash'])
 
-        UserGuards.require_user_in_columns_blocked(columns)
         UserGuards.require_user_in_columns_closed(columns)
+        UserGuards.require_user_in_columns_blocked(columns)
 
         user_id = columns['user_id']
         role = columns['role']
@@ -201,13 +201,13 @@ class RefreshUserCase:
         if user is None:
             columns = await self._auth_queries.select_user_role_by_id(user_id)
             columns = UserGuards.require_columns_exist(columns)
-            UserGuards.require_user_in_columns_blocked(columns)
             UserGuards.require_user_in_columns_closed(columns)
+            UserGuards.require_user_in_columns_blocked(columns)
 
             role = columns['role']
         else:
-            UserGuards.require_user_blocked(user)
             UserGuards.require_user_closed(user)
+            UserGuards.require_user_blocked(user)
 
             role = user.role
 
@@ -239,6 +239,10 @@ class ShowCurrentUserCase:
         access_payload = self._manage_token_case.decode_access_token(token)
         user_id = access_payload['sub']
 
+        result = await self._auth_queries.select_not_revoked_tokens_by_user_id(user_id)
+        if not result:
+         raise RevokedTokenError('All tokens were burned before')
+
         user = await self._current_user_redis_commands.get_current_user(user_id)
         if user is None:
             user = await self._auth_queries.select_user_by_id(user_id)
@@ -246,19 +250,19 @@ class ShowCurrentUserCase:
 
             await self._current_user_redis_commands.set_current_user(FullUserInfoDTO.model_validate(user))
 
-        UserGuards.require_user_blocked(user)
         UserGuards.require_user_closed(user)
+        UserGuards.require_user_blocked(user)
 
         if admin is not None:
             role = access_payload['role']
 
-            if not user.role == role and user.role == UserRoleEnum.ADMIN:
+            if user.role == role and user.role != UserRoleEnum.ADMIN:
                 raise ForbiddenError('User role != admin')
 
         if vip is not None:
             role = access_payload['role']
 
-            if not user.role == role and user.role == UserRoleEnum.VIP:
+            if user.role == role and user.role != UserRoleEnum.VIP:
                 raise ForbiddenError('User role != vip')
 
         return FullUserInfoDTO.model_validate(user)

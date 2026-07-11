@@ -29,3 +29,13 @@ class UserClosedError(UserRouterError):
 class UserNotFoundError(UserRouterError):
     title = 'User not found error'
     status_code = 404
+
+
+class UserAlreadyBlockedError(UserRouterError):
+    title = 'User already blocked error'
+    status_code = 409
+
+
+class UserAlreadyUnblockedError(UserRouterError):
+    title = 'User already unblocked error'
+    status_code = 409

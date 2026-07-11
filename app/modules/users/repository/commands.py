@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import update
+from sqlalchemy import update, delete
 
 from app.common.enums.user import UserRoleEnum
 from app.infrastructure.database.model.user import UserModel
@@ -31,9 +31,13 @@ class UserCommandsRepository:
                                           .where(UserModel.user_id == user_id, UserModel.closed_at.is_(None))
                                           .values(closed_at=datetime.now(UTC)))
 
-    async def delete_user_by_id(self, user_id: UUID) -> None:
-        await self._async_session.delete(user_id)
-        await self._async_session.flush()
+    async def delete_closed_user_by_id(self, user_id: UUID) -> UUID | None:
+        deleted_obj_id = await self._async_session.execute(delete(UserModel)
+                                          .where(UserModel.user_id == user_id, UserModel.closed_at.is_not(None))
+                                          .returning(UserModel.user_id))
+
+        deleted_obj_id = deleted_obj_id.scalar_one_or_none()
+        return deleted_obj_id
 
     async def alter_block_user_by_id(self, user_id: UUID) -> UserModel | None:
         user = await self._async_session.execute(update(UserModel)
@@ -45,7 +49,7 @@ class UserCommandsRepository:
 
     async def alter_unblock_user_by_id(self, user_id: UUID) -> UserModel | None:
         user = await self._async_session.execute(update(UserModel)
-                                                 .where(UserModel.user_id == user_id, UserModel.blocked_at.is_(not None))
+                                                 .where(UserModel.user_id == user_id, UserModel.blocked_at.is_not(None))
                                                  .values(blocked_at=None)
                                                  .returning(UserModel))
 
