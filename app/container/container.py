@@ -18,6 +18,7 @@ from app.modules.auth.service.use_cases import ManageTokenCase, LoginUserCase, S
     RefreshUserCase
 from app.modules.sessions.repository.commands import SessionCommandsRepository
 from app.modules.sessions.repository.queries import SessionQueriesRepository
+from app.modules.sessions.service.use_cases import ShowRefreshTokenCase, DeleteRefreshTokenCase
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase, ManageUserCase, ShowUserCase, \
@@ -175,6 +176,20 @@ class QueriesRepositoryProvider(Provider):
         return UserAuditQueriesRepository(async_session)
 
 
+class SessionCasesProvider(Provider):
+    """Провайдер по созданию кейсов refresh токенов"""
+
+    scope = Scope.REQUEST
+
+    @provide
+    def show_refresh_token_case(self, session_queries: SessionQueriesRepository) -> ShowRefreshTokenCase:
+        return ShowRefreshTokenCase(session_queries)
+
+    @provide
+    def delete_refresh_token_case(self, session_commands: SessionCommandsRepository) -> DeleteRefreshTokenCase:
+        return DeleteRefreshTokenCase(session_commands)
+
+
 class UserAuditCasesProvider(Provider):
     """Провайдер для создания кейсов по аудиту пользователей"""
 
@@ -254,6 +269,7 @@ def create_async_container() -> AsyncContainer:
         RedisRepositoriesProvider(),
         CommandsRepositoryProvider(),
         QueriesRepositoryProvider(),
+        SessionCasesProvider(),
         UserAuditCasesProvider(),
         AuthUseCasesProvider(),
         UserUseCasesProvider(),
