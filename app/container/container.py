@@ -17,7 +17,8 @@ from app.modules.sessions.repository.commands import SessionCommandsRepository
 from app.modules.sessions.repository.queries import SessionQueriesRepository
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
-from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase, ManageUserCase, ShowUserCase
+from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase, ManageUserCase, ShowUserCase, \
+    UpdateUserCase
 
 
 class DatabaseConfigProvider(Provider):
@@ -197,6 +198,10 @@ class UserUseCasesProvider(Provider):
     @provide
     def create_user_case(self, user_commands: UserCommandsRepository) -> CreateUserCase:
         return CreateUserCase(user_commands)
+    
+    @provide
+    def update_user_case(self, user_commands: UserCommandsRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> UpdateUserCase:
+        return UpdateUserCase(user_commands, current_user_redis_commands)
 
     @provide
     def delete_user_case(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase) -> DeleteUserCase:

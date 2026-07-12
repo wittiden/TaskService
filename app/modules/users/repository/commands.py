@@ -54,3 +54,16 @@ class UserCommandsRepository:
                                                  .returning(UserModel))
 
         return user.scalar_one_or_none()
+
+    async def alter_user_params(self, user_id: UUID, new_params: dict) -> UserModel | None:
+        try:
+            user = await self._async_session.execute(update(UserModel)
+                                                     .where(UserModel.user_id == user_id)
+                                                     .values(**new_params)
+                                                     .returning(UserModel))
+
+            return user.scalar_one_or_none()
+
+        except IntegrityError:
+            await self._async_session.rollback()
+            raise

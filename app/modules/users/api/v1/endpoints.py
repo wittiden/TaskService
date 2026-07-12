@@ -8,8 +8,9 @@ from starlette.responses import Response
 from app.common.limiter.config import limiter
 from app.infrastructure.unit_of_work.uow import UnitOfWork
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO, FullUserInfoDTO
-from app.modules.users.contracts.schemas import CreateUserSchema
-from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase, ManageUserCase, ShowUserCase
+from app.modules.users.contracts.schemas import CreateUserSchema, UpdateUserSchema
+from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase, ManageUserCase, ShowUserCase, \
+    UpdateUserCase
 from app.common.security.jwt_current import CurrentUser, CurrentAdmin
 
 users_router = APIRouter(prefix='/api/v1/users', tags=['users'])
@@ -35,6 +36,13 @@ async def create_admin_endpoint(request: Request, response: Response, schema: Cr
 @inject
 async def create_standard_endpoint(request: Request, response: Response, schema: CreateUserSchema, case: FromDishka[CreateUserCase], uow: FromDishka[UnitOfWork]) -> SecurityUserInfoDTO:
     return await case.create_vip(schema.name, schema.email, schema.password)
+
+
+@users_router.patch('/me', response_model=SecurityUserInfoDTO, summary='Update me')
+@limiter.limit('10/minute')
+@inject
+async def update_me_endpoint(request: Request, response: Response, current_user: CurrentUser, schema: UpdateUserSchema, case: FromDishka[UpdateUserCase], uow: FromDishka[UnitOfWork]) -> SecurityUserInfoDTO:
+    return await case.update_user_params(current_user, schema.model_dump(exclude_none=True))
 
 
 @users_router.patch('/close-me', summary='Close my account', status_code=status.HTTP_204_NO_CONTENT)

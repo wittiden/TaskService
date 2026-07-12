@@ -39,3 +39,8 @@ class UserAlreadyBlockedError(UserRouterError):
 class UserAlreadyUnblockedError(UserRouterError):
     title = 'User already unblocked error'
     status_code = 409
+
+
+class UserEmailExistError(UserRouterError):
+    title = 'User email exist error'
+    status_code = 409

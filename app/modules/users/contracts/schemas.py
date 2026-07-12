@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class CreateUserSchema(BaseModel):
@@ -7,3 +7,11 @@ class CreateUserSchema(BaseModel):
     name: str
     email: EmailStr
     password: str
+
+
+class UpdateUserSchema(BaseModel):
+    """Схема по обновлению пользователя"""
+
+    name: str | None = Field(default=None, examples=[None])
+    email: EmailStr | None = Field(default=None, examples=[None])
+    password: str | None = Field(default=None, examples=[None])

@@ -4,10 +4,11 @@ from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.user import UserRoleEnum
 from app.common.security.pass_utils import hash_pass
+from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
 from app.modules.auth.service.use_cases import LogoutUserCase
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO, FullUserInfoDTO
 from app.modules.users.exceptions import InvalidUserDataError, UserNotFoundError, UserAlreadyBlockedError, \
-    UserAlreadyUnblockedError
+    UserAlreadyUnblockedError, UserEmailExistError
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.guards import UserGuards
@@ -42,6 +43,31 @@ class CreateUserCase:
 
 class UpdateUserCase:
     """Кейс по обновлению информации пользователя"""
+
+    def __init__(self, user_commands: UserCommandsRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> None:
+        self._user_commands = user_commands
+        self._current_user_redis_commands = current_user_redis_commands
+
+    async def update_user_params(self, current_user: FullUserInfoDTO, new_params: dict) -> SecurityUserInfoDTO:
+        if not new_params:
+            return SecurityUserInfoDTO.model_validate(current_user)
+
+        if 'password' in new_params:
+            password = new_params['password']
+            password_hash = hash_pass(password)
+
+            new_params.pop('password')
+            new_params['password_hash'] = password_hash
+
+        try:
+            user = await self._user_commands.alter_user_params(current_user.user_id, new_params)
+        except IntegrityError:
+            raise UserEmailExistError('User email must be unique')
+
+        user = UserGuards.require_user_exist(user)
+        await self._current_user_redis_commands.set_current_user(FullUserInfoDTO.model_validate(user))
+
+        return SecurityUserInfoDTO.model_validate(user)
 
 
 class DeleteUserCase:
