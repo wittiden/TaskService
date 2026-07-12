@@ -37,4 +37,5 @@ class RedisConfig(BaseSettings):
     def redis_stats_db_url(self) -> str:
         return self._url(self.REDIS_STATS_DB)
 
+
 redis_config = RedisConfig()

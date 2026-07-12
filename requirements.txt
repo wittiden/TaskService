@@ -29,3 +29,5 @@ loguru~=0.7.3
 
 #pre-commit pipeline
 ruff~=0.15.20
+pre-commit~=4.6.0
+pyright~=1.1.411

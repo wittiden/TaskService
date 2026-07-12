@@ -1,9 +1,9 @@
 import sys
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from loguru import logger
 from fastapi import FastAPI
+from loguru import logger
 
 
 @asynccontextmanager

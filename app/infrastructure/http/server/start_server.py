@@ -1,7 +1,8 @@
 import sys
+
 from fastapi import FastAPI
 
-from app.infrastructure.http.server.adapters import UvicornServer, GunicornServer
+from app.infrastructure.http.server.adapters import GunicornServer, UvicornServer
 from app.infrastructure.http.server.config import ServerConfig
 
 

@@ -1,20 +1,26 @@
+from datetime import UTC, datetime, timedelta
 from typing import Any
-from datetime import datetime, UTC, timedelta
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
 import jwt
-from jwt import InvalidSignatureError, InvalidAudienceError, InvalidAlgorithmError, InvalidKeyError, DecodeError, \
-    InvalidTokenError
+from jwt import DecodeError, InvalidAlgorithmError, InvalidAudienceError, InvalidKeyError, InvalidSignatureError, InvalidTokenError
 
-from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
-from app.modules.auth.jwt_config import TokenConfig
-from app.modules.auth.exceptions import InvalidTokenSignatureError, InvalidTokenAudienceError, \
-    InvalidTokenAlgorithmError, InvalidTokenKeyError, DecodeTokenError, TokenInvalidError, InvalidTokenVersionError, \
-    RevokedTokenError
 from app.common.enums.user import UserRoleEnum
 from app.common.security.pass_utils import verify_pass
+from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
 from app.modules.auth.contracts.dtos import TokenInfoDTO
-from app.modules.auth.exceptions import ForbiddenError
+from app.modules.auth.exceptions import (
+    DecodeTokenError,
+    ForbiddenError,
+    InvalidTokenAlgorithmError,
+    InvalidTokenAudienceError,
+    InvalidTokenKeyError,
+    InvalidTokenSignatureError,
+    InvalidTokenVersionError,
+    RevokedTokenError,
+    TokenInvalidError,
+)
+from app.modules.auth.jwt_config import TokenConfig
 from app.modules.auth.repository.commands import AuthCommandsRepository
 from app.modules.auth.repository.queries import AuthQueriesRepository
 from app.modules.users.contracts.dtos import FullUserInfoDTO
@@ -50,22 +56,24 @@ class ManageTokenCase:
         try:
             return jwt.decode(
                 jwt=access_token,
-                algorithms=[self._token_config.ACCESS_TOKEN_ALGORITHM,],
+                algorithms=[
+                    self._token_config.ACCESS_TOKEN_ALGORITHM,
+                ],
                 key=self._token_config.access_token_public_key,
                 audience=self._token_config.ACCESS_TOKEN_AUDIENCE,
             )
-        except InvalidSignatureError:
-            raise InvalidTokenSignatureError('Access token signature error')
-        except InvalidAudienceError:
-            raise InvalidTokenAudienceError('Access token audience error')
-        except InvalidAlgorithmError:
-            raise InvalidTokenAlgorithmError('Access token algorithm error')
-        except InvalidKeyError:
-            raise InvalidTokenKeyError('Access token key error')
-        except DecodeError:
-            raise DecodeTokenError('Access token decode error')
-        except InvalidTokenError:
-            raise TokenInvalidError('Access token error')
+        except InvalidSignatureError as exc:
+            raise InvalidTokenSignatureError(str(exc)) from exc
+        except InvalidAudienceError as exc:
+            raise InvalidTokenAudienceError(str(exc)) from exc
+        except InvalidAlgorithmError as exc:
+            raise InvalidTokenAlgorithmError(str(exc)) from exc
+        except InvalidKeyError as exc:
+            raise InvalidTokenKeyError(str(exc)) from exc
+        except DecodeError as exc:
+            raise DecodeTokenError(str(exc)) from exc
+        except InvalidTokenError as exc:
+            raise TokenInvalidError(str(exc)) from exc
 
     async def encode_refresh_token(self, payload: dict[str, Any]) -> str:
         now = datetime.now(UTC)
@@ -104,22 +112,24 @@ class ManageTokenCase:
         try:
             return jwt.decode(
                 jwt=refresh_token,
-                algorithms=[self._token_config.REFRESH_TOKEN_ALGORITHM,],
+                algorithms=[
+                    self._token_config.REFRESH_TOKEN_ALGORITHM,
+                ],
                 key=self._token_config.refresh_token_public_key,
                 audience=self._token_config.REFRESH_TOKEN_AUDIENCE,
             )
-        except InvalidSignatureError:
-            raise InvalidTokenSignatureError('Refresh token signature error')
-        except InvalidAudienceError:
-            raise InvalidTokenAudienceError('Refresh token audience error')
-        except InvalidAlgorithmError:
-            raise InvalidTokenAlgorithmError('Refresh token algorithm error')
-        except InvalidKeyError:
-            raise InvalidTokenKeyError('Refresh token key error')
-        except DecodeError:
-            raise DecodeTokenError('Refresh token decode error')
-        except InvalidTokenError:
-            raise TokenInvalidError('Refresh token error')
+        except InvalidSignatureError as exc:
+            raise InvalidTokenSignatureError(str(exc)) from exc
+        except InvalidAudienceError as exc:
+            raise InvalidTokenAudienceError(str(exc)) from exc
+        except InvalidAlgorithmError as exc:
+            raise InvalidTokenAlgorithmError(str(exc)) from exc
+        except InvalidKeyError as exc:
+            raise InvalidTokenKeyError(str(exc)) from exc
+        except DecodeError as exc:
+            raise DecodeTokenError(str(exc)) from exc
+        except InvalidTokenError as exc:
+            raise TokenInvalidError(str(exc)) from exc
 
 
 class LoginUserCase:
@@ -143,9 +153,7 @@ class LoginUserCase:
             'sub': str(user_id),
             'role': role,
         }
-        refresh_payload = {
-            'sub': str(user_id)
-        }
+        refresh_payload = {'sub': str(user_id)}
 
         access_token = self._manage_token_case.encode_access_token(access_payload)
         refresh_token = await self._manage_token_case.encode_refresh_token(refresh_payload)
@@ -177,7 +185,14 @@ class LogoutUserCase:
 class RefreshUserCase:
     """Кейс по обновлению токенов пользователя"""
 
-    def __init__(self, manage_token_case: ManageTokenCase, auth_queries: AuthQueriesRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository, token_config: TokenConfig, auth_commands: AuthCommandsRepository) -> None:
+    def __init__(
+        self,
+        manage_token_case: ManageTokenCase,
+        auth_queries: AuthQueriesRepository,
+        current_user_redis_commands: CurrentUserRedisCommandsRepository,
+        token_config: TokenConfig,
+        auth_commands: AuthCommandsRepository,
+    ) -> None:
         self._manage_token_case = manage_token_case
         self._auth_queries = auth_queries
         self._current_user_redis_commands = current_user_redis_commands
@@ -211,10 +226,7 @@ class RefreshUserCase:
 
             role = user.role
 
-        new_access_payload = {
-            'sub': str(user_id),
-            'role': role
-        }
+        new_access_payload = {'sub': str(user_id), 'role': role}
         new_refresh_payload = {
             'sub': str(user_id),
         }
@@ -241,7 +253,7 @@ class ShowCurrentUserCase:
 
         result = await self._auth_queries.select_not_revoked_tokens_by_user_id(user_id)
         if not result:
-         raise RevokedTokenError('All tokens were burned before')
+            raise RevokedTokenError('All tokens were burned before')
 
         user = await self._current_user_redis_commands.get_current_user(user_id)
         if user is None:

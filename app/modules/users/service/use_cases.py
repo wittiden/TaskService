@@ -3,13 +3,12 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.user import UserRoleEnum
-from app.common.security.pass_utils import hash_pass, check_same_passes
+from app.common.security.pass_utils import hash_pass
 from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
 from app.modules.audits.service.use_cases import CreateUserAuditCase
 from app.modules.auth.service.use_cases import LogoutUserCase
-from app.modules.users.contracts.dtos import SecurityUserInfoDTO, FullUserInfoDTO
-from app.modules.users.exceptions import InvalidUserDataError, UserNotFoundError, UserAlreadyBlockedError, \
-    UserAlreadyUnblockedError, UserEmailExistError
+from app.modules.users.contracts.dtos import FullUserInfoDTO, SecurityUserInfoDTO
+from app.modules.users.exceptions import InvalidUserDataError, UserAlreadyBlockedError, UserAlreadyUnblockedError, UserEmailExistError, UserNotFoundError
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.guards import UserGuards
@@ -26,8 +25,8 @@ class CreateUserCase:
 
         try:
             user = await self._user_commands.insert_user_data(name, email, password_hash, role)
-        except IntegrityError:
-            raise InvalidUserDataError('User cant create due to invalid data')
+        except IntegrityError as exc:
+            raise InvalidUserDataError(str(exc)) from exc
         user = UserGuards.require_user_exist(user)
 
         return SecurityUserInfoDTO.model_validate(user)
@@ -70,15 +69,15 @@ class UpdateUserCase:
 
         try:
             user = await self._user_commands.alter_user_params(current_user.user_id, new_params)
-        except IntegrityError:
-            raise UserEmailExistError('User email must be unique')
+        except IntegrityError as exc:
+            raise UserEmailExistError(str(exc)) from exc
         user = UserGuards.require_user_exist(user)
 
         await self._current_user_redis_commands.set_current_user(FullUserInfoDTO.model_validate(user))
 
         for key, value in new_params.items():
             if 'password_hash' in key:
-                await self._create_user_audit_case.create_user_audit(current_user.user_id, str(key), "*****", "*****")
+                await self._create_user_audit_case.create_user_audit(current_user.user_id, str(key), '*****', '*****')
             else:
                 await self._create_user_audit_case.create_user_audit(current_user.user_id, str(key), str(getattr(current_user, key)), str(value))
 
@@ -111,7 +110,9 @@ class DeleteUserCase:
 class ManageUserCase:
     """Кейс по менедженгу пользователей"""
 
-    def __init__(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository, create_user_audit_case: CreateUserAuditCase) -> None:
+    def __init__(
+        self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository, create_user_audit_case: CreateUserAuditCase
+    ) -> None:
         self._user_commands = user_commands
         self._logout_user_case = logout_user_case
         self._user_queries = user_queries
@@ -144,7 +145,7 @@ class ManageUserCase:
         return FullUserInfoDTO.model_validate(user)
 
 
-class ShowUserCase: 
+class ShowUserCase:
     """Кейс по показу информации пользователей"""
 
     def __init__(self, user_queries: UserQueriesRepository) -> None:

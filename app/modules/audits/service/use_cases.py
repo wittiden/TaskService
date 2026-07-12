@@ -20,7 +20,7 @@ class CreateUserAuditCase:
             await self._user_audit_commands.insert_user_audit_obj(user_id, field_name, old_value, new_value)
 
         except IntegrityError as exc:
-            raise UserAuditModelIntegrityError(str(exc))
+            raise UserAuditModelIntegrityError(str(exc)) from exc
 
 
 class ShowUserAuditCase:

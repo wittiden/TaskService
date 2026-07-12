@@ -1,5 +1,4 @@
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any
 
 import uvicorn
@@ -59,7 +58,6 @@ class GunicornServer(ServerAdapter):
         from gunicorn.app.base import BaseApplication
 
         class GunicornApplication(BaseApplication):
-
             def __init__(self, app: FastAPI, options: dict) -> None:
                 self._app = app
                 self._options = options

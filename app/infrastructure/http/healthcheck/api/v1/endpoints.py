@@ -1,5 +1,5 @@
-from fastapi import APIRouter
 from dishka.integrations.fastapi import FromDishka, inject
+from fastapi import APIRouter
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncEngine
 

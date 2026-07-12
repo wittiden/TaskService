@@ -27,4 +27,5 @@ class CORSConfig(BaseSettings):
     def allow_headers(self) -> list[str]:
         return self.ALLOW_HEADERS.split(',')
 
+
 cors_config = CORSConfig()

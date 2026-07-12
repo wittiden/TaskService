@@ -1,7 +1,6 @@
 from app.infrastructure.database.model.user import UserModel
 from app.modules.users.contracts.dtos import FullUserInfoDTO
-from app.modules.users.exceptions import InvalidUserDataError, UserColumnsNotFoundError, UserBlockedError, \
-    UserClosedError
+from app.modules.users.exceptions import InvalidUserDataError, UserBlockedError, UserClosedError, UserColumnsNotFoundError
 
 
 class UserGuards:

@@ -3,8 +3,8 @@ from uuid import uuid4
 
 from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.responses import Response
 from starlette.requests import Request
+from starlette.responses import Response
 
 
 class LoggerMiddleware(BaseHTTPMiddleware):
@@ -16,7 +16,7 @@ class LoggerMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
 
-        if not '/api/v1' in request.url.path:
+        if '/api/v1' not in request.url.path:
             return response
 
         process_time = (perf_counter() - now) * 1000

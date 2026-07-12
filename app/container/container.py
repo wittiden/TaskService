@@ -1,9 +1,10 @@
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
+from dishka import AsyncContainer, Provider, Scope, make_async_container, provide
 from redis.asyncio import Redis
-from dishka import Provider, provide, Scope, AsyncContainer, make_async_container
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
+from app.infrastructure.database.config import DatabaseConfig
 from app.infrastructure.redis.config import RedisConfig
 from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
 from app.infrastructure.unit_of_work.uow import UnitOfWork
@@ -11,18 +12,15 @@ from app.modules.audits.repository.commands import UserAuditCommandsRepository
 from app.modules.audits.repository.queries import UserAuditQueriesRepository
 from app.modules.audits.service.use_cases import CreateUserAuditCase, ShowUserAuditCase
 from app.modules.auth.jwt_config import TokenConfig
-from app.infrastructure.database.config import DatabaseConfig
 from app.modules.auth.repository.commands import AuthCommandsRepository
 from app.modules.auth.repository.queries import AuthQueriesRepository
-from app.modules.auth.service.use_cases import ManageTokenCase, LoginUserCase, ShowCurrentUserCase, LogoutUserCase, \
-    RefreshUserCase
+from app.modules.auth.service.use_cases import LoginUserCase, LogoutUserCase, ManageTokenCase, RefreshUserCase, ShowCurrentUserCase
 from app.modules.sessions.repository.commands import SessionCommandsRepository
 from app.modules.sessions.repository.queries import SessionQueriesRepository
-from app.modules.sessions.service.use_cases import ShowRefreshTokenCase, DeleteRefreshTokenCase
+from app.modules.sessions.service.use_cases import DeleteRefreshTokenCase, ShowRefreshTokenCase
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
-from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase, ManageUserCase, ShowUserCase, \
-    UpdateUserCase
+from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase, ManageUserCase, ShowUserCase, UpdateUserCase
 
 
 class DatabaseConfigProvider(Provider):
@@ -39,15 +37,7 @@ class DatabaseEngineProvider(Provider):
     @provide(scope=Scope.APP)
     async def database_engine(self, database_config: DatabaseConfig) -> AsyncGenerator[AsyncEngine, None]:
         async_engine = create_async_engine(
-            url=database_config.database_url,
-            echo=False,
-            pool_pre_ping=True,
-            pool_size=10,
-            max_overflow=20,
-            pool_timeout=5,
-            connect_args={
-                'command_timeout': 5
-            }
+            url=database_config.database_url, echo=False, pool_pre_ping=True, pool_size=10, max_overflow=20, pool_timeout=5, connect_args={'command_timeout': 5}
         )
 
         yield async_engine
@@ -222,11 +212,20 @@ class AuthUseCasesProvider(Provider):
         return LogoutUserCase(auth_commands, token_config, current_user_redis_commands)
 
     @provide
-    def refresh_user_case(self, auth_queries: AuthQueriesRepository, auth_commands: AuthCommandsRepository, manage_token_case: ManageTokenCase, token_config: TokenConfig, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> RefreshUserCase:
+    def refresh_user_case(
+        self,
+        auth_queries: AuthQueriesRepository,
+        auth_commands: AuthCommandsRepository,
+        manage_token_case: ManageTokenCase,
+        token_config: TokenConfig,
+        current_user_redis_commands: CurrentUserRedisCommandsRepository,
+    ) -> RefreshUserCase:
         return RefreshUserCase(manage_token_case, auth_queries, current_user_redis_commands, token_config, auth_commands)
 
     @provide
-    def show_current_user_case(self, manage_token_case: ManageTokenCase, auth_queries: AuthQueriesRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> ShowCurrentUserCase:
+    def show_current_user_case(
+        self, manage_token_case: ManageTokenCase, auth_queries: AuthQueriesRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository
+    ) -> ShowCurrentUserCase:
         return ShowCurrentUserCase(manage_token_case, auth_queries, current_user_redis_commands)
 
 
@@ -240,7 +239,9 @@ class UserUseCasesProvider(Provider):
         return CreateUserCase(user_commands)
 
     @provide
-    def update_user_case(self, user_commands: UserCommandsRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository, create_user_audit_case: CreateUserAuditCase) -> UpdateUserCase:
+    def update_user_case(
+        self, user_commands: UserCommandsRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository, create_user_audit_case: CreateUserAuditCase
+    ) -> UpdateUserCase:
         return UpdateUserCase(user_commands, current_user_redis_commands, create_user_audit_case)
 
     @provide
@@ -248,7 +249,9 @@ class UserUseCasesProvider(Provider):
         return DeleteUserCase(user_commands, logout_user_case, create_user_audit_case)
 
     @provide
-    def manage_user_case(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository, create_user_audit_case: CreateUserAuditCase) -> ManageUserCase:
+    def manage_user_case(
+        self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository, create_user_audit_case: CreateUserAuditCase
+    ) -> ManageUserCase:
         return ManageUserCase(user_commands, logout_user_case, user_queries, create_user_audit_case)
 
     @provide
@@ -274,5 +277,6 @@ def create_async_container() -> AsyncContainer:
         AuthUseCasesProvider(),
         UserUseCasesProvider(),
     )
+
 
 async_container = create_async_container()

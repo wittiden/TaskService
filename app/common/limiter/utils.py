@@ -1,5 +1,5 @@
-from starlette.requests import Request
 from slowapi.util import get_remote_address
+from starlette.requests import Request
 
 
 def get_remote_user(request: Request):

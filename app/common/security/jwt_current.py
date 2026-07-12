@@ -1,9 +1,9 @@
 from typing import Annotated
 
-from starlette.requests import Request
-from fastapi import Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dishka.integrations.fastapi import FromDishka, inject
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from starlette.requests import Request
 
 from app.modules.auth.service.use_cases import ShowCurrentUserCase
 from app.modules.users.contracts.dtos import FullUserInfoDTO
@@ -38,4 +38,4 @@ async def get_current_vip(request: Request, case: FromDishka[ShowCurrentUserCase
 
 CurrentUser = Annotated[FullUserInfoDTO, Depends(get_current_standard)]
 CurrentAdmin = Annotated[FullUserInfoDTO, Depends(get_current_admin)]
-CurrentVip= Annotated[FullUserInfoDTO, Depends(get_current_vip)]
+CurrentVip = Annotated[FullUserInfoDTO, Depends(get_current_vip)]

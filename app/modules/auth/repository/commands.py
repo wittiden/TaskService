@@ -1,8 +1,8 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database.model.refresh_token import RefreshTokenModel
 
@@ -21,16 +21,18 @@ class AuthCommandsRepository:
         return refresh_token_model
 
     async def alter_user_refresh_tokens_revoked_param(self, user_id: UUID, audience: str) -> None:
-        await self._async_session.execute(update(RefreshTokenModel)
-                                          .where(RefreshTokenModel.user_id == user_id, RefreshTokenModel.audience == audience, RefreshTokenModel.revoked_at.is_(None))
-                                          .values(revoked_at=datetime.now(UTC)))
+        await self._async_session.execute(
+            update(RefreshTokenModel)
+            .where(RefreshTokenModel.user_id == user_id, RefreshTokenModel.audience == audience, RefreshTokenModel.revoked_at.is_(None))
+            .values(revoked_at=datetime.now(UTC))
+        )
 
     async def alter_all_user_refresh_tokens_revoked_param(self, user_id: UUID) -> None:
-        await self._async_session.execute(update(RefreshTokenModel)
-                                          .where(RefreshTokenModel.user_id == user_id, RefreshTokenModel.revoked_at.is_(None))
-                                          .values(revoked_at=datetime.now(UTC)))
+        await self._async_session.execute(
+            update(RefreshTokenModel).where(RefreshTokenModel.user_id == user_id, RefreshTokenModel.revoked_at.is_(None)).values(revoked_at=datetime.now(UTC))
+        )
 
     async def alter_refresh_token_revoked_param(self, refresh_token_id: UUID) -> None:
-        await self._async_session.execute(update(RefreshTokenModel)
-                                          .where(RefreshTokenModel.refresh_token_id == refresh_token_id, RefreshTokenModel.revoked_at.is_(None))
-                                          .values(revoked_at=datetime.now(UTC)))
+        await self._async_session.execute(
+            update(RefreshTokenModel).where(RefreshTokenModel.refresh_token_id == refresh_token_id, RefreshTokenModel.revoked_at.is_(None)).values(revoked_at=datetime.now(UTC))
+        )

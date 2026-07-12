@@ -1,5 +1,5 @@
-from fastapi import APIRouter, status
 from dishka.integrations.fastapi import FromDishka, inject
+from fastapi import APIRouter, status
 from starlette.requests import Request
 from starlette.responses import Response
 

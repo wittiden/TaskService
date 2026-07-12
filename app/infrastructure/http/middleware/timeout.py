@@ -2,8 +2,8 @@ import asyncio
 from asyncio.exceptions import TimeoutError
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.responses import Response, JSONResponse
 from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
 
 
 class TimeoutMiddleware(BaseHTTPMiddleware):
@@ -20,7 +20,7 @@ class TimeoutMiddleware(BaseHTTPMiddleware):
                     'path': request.url.path,
                     'title': 'Gateway timeout error',
                     'details': 'Waif for timeout error in middleware',
-                }
+                },
             )
 
         return response
