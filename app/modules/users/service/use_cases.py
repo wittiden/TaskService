@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.common.enums.user import UserRoleEnum
 from app.common.security.pass_utils import hash_pass, check_same_passes
 from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
-from app.modules.audit.service.use_cases import CreateUserAuditCase
+from app.modules.audits.service.use_cases import CreateUserAuditCase
 from app.modules.auth.service.use_cases import LogoutUserCase
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO, FullUserInfoDTO
 from app.modules.users.exceptions import InvalidUserDataError, UserNotFoundError, UserAlreadyBlockedError, \

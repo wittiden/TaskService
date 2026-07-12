@@ -7,8 +7,8 @@ from dishka.integrations.fastapi import FromDishka, inject
 
 from app.common.limiter.config import limiter
 from app.infrastructure.unit_of_work.uow import UnitOfWork
-from app.modules.audit.contracts.dtos import FullUserAuditInfoDTO
-from app.modules.audit.service.use_cases import ShowUserAuditCase
+from app.modules.audits.contracts.dtos import FullUserAuditInfoDTO
+from app.modules.audits.service.use_cases import ShowUserAuditCase
 from app.common.security.jwt_current import CurrentAdmin
 
 admin_user_audits_router = APIRouter(prefix='/api/v1/admin/user-audits', tags=['admin-user-audits'])
@@ -27,7 +27,7 @@ async def show_user_audits_by_user_id_endpoint(current_user: CurrentAdmin, user_
     return await case.show_user_audits_by_user_id(user_id, offset, limit)
 
 
-@admin_user_audits_router.get('/by-id/{user_audit_id}', response_model=FullUserAuditInfoDTO, summary='Show user audit by id')
+@admin_user_audits_router.get('/by-id/{user_audit_id}', response_model=FullUserAuditInfoDTO, summary='Show user audits by id')
 @inject
 async def show_user_audits_by_id_endpoint(current_user: CurrentAdmin, user_audit_id: UUID, case: FromDishka[ShowUserAuditCase], uow: FromDishka[UnitOfWork]) -> FullUserAuditInfoDTO:
     return await case.show_user_audit_by_id(user_audit_id)

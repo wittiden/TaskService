@@ -2,11 +2,11 @@ from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
 
-from app.modules.audit.contracts.dtos import FullUserAuditInfoDTO
-from app.modules.audit.exceptions import UserAuditModelIntegrityError
-from app.modules.audit.repository.commands import UserAuditCommandsRepository
-from app.modules.audit.repository.queries import UserAuditQueriesRepository
-from app.modules.audit.service.guards import AuditGuards
+from app.modules.audits.contracts.dtos import FullUserAuditInfoDTO
+from app.modules.audits.exceptions import UserAuditModelIntegrityError
+from app.modules.audits.repository.commands import UserAuditCommandsRepository
+from app.modules.audits.repository.queries import UserAuditQueriesRepository
+from app.modules.audits.service.guards import AuditGuards
 
 
 class CreateUserAuditCase:

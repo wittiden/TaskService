@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSessio
 from app.infrastructure.redis.config import RedisConfig
 from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
 from app.infrastructure.unit_of_work.uow import UnitOfWork
-from app.modules.audit.repository.commands import UserAuditCommandsRepository
-from app.modules.audit.repository.queries import UserAuditQueriesRepository
-from app.modules.audit.service.use_cases import CreateUserAuditCase, ShowUserAuditCase
+from app.modules.audits.repository.commands import UserAuditCommandsRepository
+from app.modules.audits.repository.queries import UserAuditQueriesRepository
+from app.modules.audits.service.use_cases import CreateUserAuditCase, ShowUserAuditCase
 from app.modules.auth.jwt_config import TokenConfig
 from app.infrastructure.database.config import DatabaseConfig
 from app.modules.auth.repository.commands import AuthCommandsRepository

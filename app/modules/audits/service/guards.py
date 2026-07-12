@@ -1,5 +1,5 @@
 from app.infrastructure.database.model import UserAuditModel
-from app.modules.audit.exceptions import UserAuditNotFoundError
+from app.modules.audits.exceptions import UserAuditNotFoundError
 
 
 class AuditGuards:
@@ -8,6 +8,6 @@ class AuditGuards:
     @staticmethod
     def require_user_audit_exist(obj: UserAuditModel | None) -> UserAuditModel:
         if obj is None:
-            raise UserAuditNotFoundError('User audit obj cant found')
+            raise UserAuditNotFoundError('User audits obj cant found')
 
         return obj
