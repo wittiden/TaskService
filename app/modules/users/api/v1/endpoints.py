@@ -34,7 +34,7 @@ async def create_admin_endpoint(request: Request, response: Response, schema: Cr
 @users_router.post('/vip', response_model=SecurityUserInfoDTO, summary='Create vip user', status_code=status.HTTP_201_CREATED)
 @limiter.shared_limit('10/minute', scope='create_limit')
 @inject
-async def create_standard_endpoint(request: Request, response: Response, schema: CreateUserSchema, case: FromDishka[CreateUserCase], uow: FromDishka[UnitOfWork]) -> SecurityUserInfoDTO:
+async def create_vip_endpoint(request: Request, response: Response, schema: CreateUserSchema, case: FromDishka[CreateUserCase], uow: FromDishka[UnitOfWork]) -> SecurityUserInfoDTO:
     return await case.create_vip(schema.name, schema.email, schema.password)
 
 
@@ -45,7 +45,7 @@ async def update_me_endpoint(request: Request, response: Response, current_user:
     return await case.update_user_params(current_user, schema.model_dump(exclude_none=True))
 
 
-@users_router.patch('/close-me', summary='Close my account', status_code=status.HTTP_204_NO_CONTENT)
+@users_router.patch('/me/close', summary='Close my account', status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit('5/minute')
 @inject
 async def close_my_account_endpoint(request: Request, response: Response, current_user: CurrentUser, case: FromDishka[DeleteUserCase], uow: FromDishka[UnitOfWork]) -> None:
@@ -79,13 +79,14 @@ async def show_me_endpoint(current_user: CurrentUser, case: FromDishka[ShowUserC
     return await case.show_me(current_user)
 
 
-@admin_users_router.get('/by-id/{user_id}', response_model=FullUserInfoDTO, summary='Show user by id')
+@admin_users_router.get('/{user_id}', response_model=FullUserInfoDTO, summary='Show user by id')
 @inject
 async def show_user_by_id_endpoint(current_user: CurrentAdmin, user_id: UUID, case: FromDishka[ShowUserCase], uow: FromDishka[UnitOfWork]) -> FullUserInfoDTO:
     return await case.show_user_by_id(user_id)
 
 
 @admin_users_router.get('/', response_model=list[FullUserInfoDTO], summary='Show users')
+@limiter.limit('30/minute')
 @inject
-async def show_users_endpoint(current_user: CurrentAdmin, case: FromDishka[ShowUserCase], uow: FromDishka[UnitOfWork], offset: int = 0, limit: int = 100) -> list[FullUserInfoDTO]:
+async def show_users_endpoint(request: Request, response: Response, current_user: CurrentAdmin, case: FromDishka[ShowUserCase], uow: FromDishka[UnitOfWork], offset: int = 0, limit: int = 100) -> list[FullUserInfoDTO]:
     return await case.show_users(offset, limit)

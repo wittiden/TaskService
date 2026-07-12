@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSessio
 from app.infrastructure.redis.config import RedisConfig
 from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
 from app.infrastructure.unit_of_work.uow import UnitOfWork
+from app.modules.audit.repository.commands import UserAuditCommandsRepository
+from app.modules.audit.repository.queries import UserAuditQueriesRepository
+from app.modules.audit.service.use_cases import CreateUserAuditCase, ShowUserAuditCase
 from app.modules.auth.jwt_config import TokenConfig
 from app.infrastructure.database.config import DatabaseConfig
 from app.modules.auth.repository.commands import AuthCommandsRepository
@@ -145,6 +148,10 @@ class CommandsRepositoryProvider(Provider):
     def session_commands_repo(self, async_session: AsyncSession) -> SessionCommandsRepository:
         return SessionCommandsRepository(async_session)
 
+    @provide
+    def user_audit_commands_repo(self, async_session: AsyncSession) -> UserAuditCommandsRepository:
+        return UserAuditCommandsRepository(async_session)
+
 
 class QueriesRepositoryProvider(Provider):
     """Провайдер по созданию queries репозиториев"""
@@ -162,6 +169,24 @@ class QueriesRepositoryProvider(Provider):
     @provide
     def session_queries_repo(self, async_session: AsyncSession) -> SessionQueriesRepository:
         return SessionQueriesRepository(async_session)
+
+    @provide
+    def user_audit_queries_repo(self, async_session: AsyncSession) -> UserAuditQueriesRepository:
+        return UserAuditQueriesRepository(async_session)
+
+
+class UserAuditCasesProvider(Provider):
+    """Провайдер для создания кейсов по аудиту пользователей"""
+
+    scope = Scope.REQUEST
+
+    @provide
+    def create_user_audit_case(self, user_audit_commands: UserAuditCommandsRepository) -> CreateUserAuditCase:
+        return CreateUserAuditCase(user_audit_commands)
+
+    @provide
+    def show_user_audit_case(self, user_audit_queries: UserAuditQueriesRepository) -> ShowUserAuditCase:
+        return ShowUserAuditCase(user_audit_queries)
 
 
 class AuthUseCasesProvider(Provider):
@@ -198,18 +223,18 @@ class UserUseCasesProvider(Provider):
     @provide
     def create_user_case(self, user_commands: UserCommandsRepository) -> CreateUserCase:
         return CreateUserCase(user_commands)
-    
-    @provide
-    def update_user_case(self, user_commands: UserCommandsRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> UpdateUserCase:
-        return UpdateUserCase(user_commands, current_user_redis_commands)
 
     @provide
-    def delete_user_case(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase) -> DeleteUserCase:
-        return DeleteUserCase(user_commands, logout_user_case)
+    def update_user_case(self, user_commands: UserCommandsRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository, create_user_audit_case: CreateUserAuditCase) -> UpdateUserCase:
+        return UpdateUserCase(user_commands, current_user_redis_commands, create_user_audit_case)
 
     @provide
-    def manage_user_case(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository) -> ManageUserCase:
-        return ManageUserCase(user_commands, logout_user_case, user_queries)
+    def delete_user_case(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, create_user_audit_case: CreateUserAuditCase) -> DeleteUserCase:
+        return DeleteUserCase(user_commands, logout_user_case, create_user_audit_case)
+
+    @provide
+    def manage_user_case(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository, create_user_audit_case: CreateUserAuditCase) -> ManageUserCase:
+        return ManageUserCase(user_commands, logout_user_case, user_queries, create_user_audit_case)
 
     @provide
     def show_user_case(self, user_queries: UserQueriesRepository) -> ShowUserCase:
@@ -229,6 +254,7 @@ def create_async_container() -> AsyncContainer:
         RedisRepositoriesProvider(),
         CommandsRepositoryProvider(),
         QueriesRepositoryProvider(),
+        UserAuditCasesProvider(),
         AuthUseCasesProvider(),
         UserUseCasesProvider(),
     )

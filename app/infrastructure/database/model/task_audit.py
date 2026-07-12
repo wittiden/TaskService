@@ -17,10 +17,9 @@ class TaskAuditModel(Base):
     __tablename__ = 'task_audits'
 
     task_audit_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
-    task_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey('tasks.task_id', ondelete='cascade'),
-                                          nullable=False, index=True)
+    task_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey('tasks.task_id', ondelete='cascade'), nullable=False, index=True)
     field_name: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
-    new_value: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    new_value: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     old_value: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False,default=lambda: datetime.now(UTC), index=True)
 

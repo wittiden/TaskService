@@ -12,3 +12,8 @@ def hash_pass(password: str) -> str:
 def verify_pass(password: str, password_hash: str) -> None:
     if not bcrypt.checkpw(password.encode(), password_hash.encode()):
         raise PassVerifyError('Password not verified (unauthorize user error)')
+
+
+def check_same_passes(password: str, password_hash: str) -> None:
+    if bcrypt.checkpw(password.encode(), password_hash.encode()):
+        raise PassVerifyError('Old password == new password')

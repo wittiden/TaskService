@@ -26,10 +26,13 @@ class UserCommandsRepository:
             await self._async_session.rollback()
             raise
 
-    async def alter_user_closed_param(self, user_id: UUID) -> None:
-        await self._async_session.execute(update(UserModel)
+    async def alter_user_closed_param(self, user_id: UUID) -> datetime | None:
+        result = await self._async_session.execute(update(UserModel)
                                           .where(UserModel.user_id == user_id, UserModel.closed_at.is_(None))
-                                          .values(closed_at=datetime.now(UTC)))
+                                          .values(closed_at=datetime.now(UTC))
+                                          .returning(UserModel.closed_at))
+
+        return result.scalar_one_or_none()
 
     async def delete_closed_user_by_id(self, user_id: UUID) -> UUID | None:
         deleted_obj_id = await self._async_session.execute(delete(UserModel)
