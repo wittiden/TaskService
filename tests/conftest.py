@@ -74,6 +74,11 @@ def create_user_audit_mock_case(mock_user_audit_commands) -> CreateUserAuditCase
 
 
 @pytest.fixture()
+def mock_create_user_audit_case() -> AsyncMock:
+    return AsyncMock(spec=CreateUserAuditCase)
+
+
+@pytest.fixture()
 def show_user_audit_mock_case(mock_user_audit_queries) -> ShowUserAuditCase:
     return ShowUserAuditCase(mock_user_audit_queries)
 
@@ -104,6 +109,11 @@ def logout_user_mock_case(mock_auth_commands, mock_token_config, mock_current_us
 
 
 @pytest.fixture()
+def mock_logout_user_case() -> AsyncMock:
+    return AsyncMock(spec=LogoutUserCase)
+
+
+@pytest.fixture()
 def refresh_user_mock_case(manage_token_mock_case, mock_auth_queries, mock_current_user_redis_commands, mock_token_config, mock_auth_commands) -> RefreshUserCase:
     return RefreshUserCase(manage_token_mock_case, mock_auth_queries, mock_current_user_redis_commands, mock_token_config, mock_auth_commands)
 
@@ -119,18 +129,18 @@ def create_user_mock_case(mock_user_commands) -> CreateUserCase:
 
 
 @pytest.fixture()
-def update_user_mock_case(mock_user_commands, mock_current_user_redis_commands, create_user_audit_mock_case) -> UpdateUserCase:
-    return UpdateUserCase(mock_user_commands, mock_current_user_redis_commands, create_user_audit_mock_case)
+def update_user_mock_case(mock_user_commands, mock_current_user_redis_commands, mock_create_user_audit_case) -> UpdateUserCase:
+    return UpdateUserCase(mock_user_commands, mock_current_user_redis_commands, mock_create_user_audit_case)
 
 
 @pytest.fixture()
-def delete_user_mock_case(mock_user_commands, logout_user_mock_case, create_user_audit_mock_case) -> DeleteUserCase:
-    return DeleteUserCase(mock_user_commands, logout_user_mock_case, create_user_audit_mock_case)
+def delete_user_mock_case(mock_user_commands, mock_logout_user_case, mock_create_user_audit_case) -> DeleteUserCase:
+    return DeleteUserCase(mock_user_commands, mock_logout_user_case, mock_create_user_audit_case)
 
 
 @pytest.fixture()
-def manage_user_mock_case(mock_user_commands, logout_user_mock_case, mock_user_queries, create_user_audit_mock_case) -> ManageUserCase:
-    return ManageUserCase(mock_user_commands, logout_user_mock_case, mock_user_queries, create_user_audit_mock_case)
+def manage_user_mock_case(mock_user_commands, mock_logout_user_case, mock_user_queries, mock_create_user_audit_case) -> ManageUserCase:
+    return ManageUserCase(mock_user_commands, mock_logout_user_case, mock_user_queries, mock_create_user_audit_case)
 
 
 @pytest.fixture()

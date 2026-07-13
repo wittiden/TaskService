@@ -49,7 +49,10 @@ class UpdateUserCase:
         self._current_user_redis_commands = current_user_redis_commands
         self._create_user_audit_case = create_user_audit_case
 
-    async def update_user_params(self, current_user: FullUserInfoDTO, new_params: dict) -> SecurityUserInfoDTO:
+    async def update_user_params(self, current_user: FullUserInfoDTO, new_params: dict | None) -> SecurityUserInfoDTO:
+        if not new_params:
+            return SecurityUserInfoDTO.model_validate(current_user)
+
         for key, value in list(new_params.items()):
             if key == 'password':
                 continue
