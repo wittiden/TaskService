@@ -153,10 +153,10 @@ class LoginUserCase:
     async def login_user(self, email: str, password: str) -> TokenInfoDTO:
         columns = await self._auth_queries.select_user_id_pass_role_by_email(email)
         columns = UserGuards.require_columns_exist(columns)
-        verify_pass(password, columns['password_hash'])
-
         UserGuards.require_user_in_columns_closed(columns)
         UserGuards.require_user_in_columns_blocked(columns)
+
+        verify_pass(password, columns['password_hash'])
 
         user_id = columns['user_id']
         role = columns['role']
@@ -223,7 +223,7 @@ class RefreshUserCase:
         version = refresh_payload['version']
         refresh_token_id = refresh_payload['jti']
 
-        if not version == self._token_config.REFRESH_TOKEN_VERSION:
+        if version != self._token_config.REFRESH_TOKEN_VERSION:
             raise InvalidTokenVersionError('Old token version')
 
         revoked_at = await self._auth_queries.select_refresh_token_revoked_by_id(refresh_token_id)

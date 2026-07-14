@@ -116,8 +116,13 @@ def manage_token_mock_case(mock_token_config, mock_auth_commands) -> ManageToken
 
 
 @pytest.fixture()
-def login_user_mock_case(manage_token_mock_case, mock_auth_queries) -> LoginUserCase:
-    return LoginUserCase(manage_token_mock_case, mock_auth_queries)
+def mock_manage_token_case() -> AsyncMock:
+    return AsyncMock(spec=ManageTokenCase)
+
+
+@pytest.fixture()
+def login_user_mock_case(mock_manage_token_case, mock_auth_queries) -> LoginUserCase:
+    return LoginUserCase(mock_manage_token_case, mock_auth_queries)
 
 
 @pytest.fixture()
@@ -134,14 +139,14 @@ def mock_logout_user_case() -> AsyncMock:
 
 @pytest.fixture()
 def refresh_user_mock_case(
-    manage_token_mock_case,
+    mock_manage_token_case,
     mock_auth_queries,
     mock_current_user_redis_commands,
     mock_token_config,
     mock_auth_commands,
 ) -> RefreshUserCase:
     return RefreshUserCase(
-        manage_token_mock_case,
+        mock_manage_token_case,
         mock_auth_queries,
         mock_current_user_redis_commands,
         mock_token_config,
@@ -151,10 +156,10 @@ def refresh_user_mock_case(
 
 @pytest.fixture()
 def show_current_user_mock_case(
-    manage_token_mock_case, mock_auth_queries, mock_current_user_redis_commands
+    mock_manage_token_case, mock_auth_queries, mock_current_user_redis_commands
 ) -> ShowCurrentUserCase:
     return ShowCurrentUserCase(
-        manage_token_mock_case, mock_auth_queries, mock_current_user_redis_commands
+        mock_manage_token_case, mock_auth_queries, mock_current_user_redis_commands
     )
 
 
