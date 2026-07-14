@@ -13,7 +13,7 @@ class UsersFactory(Factory):
     class Meta:
         model = UserModel
 
-    user_id = LazyFunction(lambda: uuid4())
+    user_id = LazyFunction(uuid4)
     name = Faker('name')
     email = Faker('email')
     password_hash = Faker('password')
