@@ -61,3 +61,17 @@ class TaskModel(Base):
         lazy='selectin',
         cascade='all, delete-orphan',
     )
+
+    def __repr__(self) -> str:
+        return (
+            f'task_id: {self.task_id},'
+            f'user_id: {self.user_id},'
+            f'created_at: {self.created_at},'
+            f'closed_at: {self.closed_at},'
+            f'completed_at: {self.completed_at},'
+            f'updated_at: {self.updated_at},'
+            f'important_level: {self.important_level},'
+            f'schedule_type: {self.schedule_type},'
+            f'title: {self.title},'
+            f'description: {self.description}'
+        )

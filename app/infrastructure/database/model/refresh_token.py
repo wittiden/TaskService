@@ -37,3 +37,13 @@ class RefreshTokenModel(Base):
     user: Mapped['UserModel'] = relationship(
         'UserModel', back_populates='refresh_tokens', uselist=False, lazy='joined'
     )
+
+    def __repr__(self) -> str:
+        return (
+            f'refresh_token_id: {self.refresh_token_id},'
+            f'user_id: {self.user_id},'
+            f'issued_at: {self.issued_at},'
+            f'expired_at: {self.expired_at},'
+            f'revoked_at: {self.revoked_at},'
+            f'audience: {self.audience}'
+        )

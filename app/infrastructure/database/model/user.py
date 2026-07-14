@@ -62,3 +62,15 @@ class UserModel(Base):
         lazy='selectin',
         cascade='all, delete-orphan',
     )
+
+    def __repr__(self) -> str:
+        return (
+            f'user_id: {self.user_id}'
+            f'name: {self.name},'
+            f'email: {self.email},'
+            f'role: {self.role},'
+            f'created_at: {self.created_at},'
+            f'closed_at: {self.closed_at},'
+            f'updated_at: {self.updated_at},'
+            f'blocked_at: {self.blocked_at}'
+        )

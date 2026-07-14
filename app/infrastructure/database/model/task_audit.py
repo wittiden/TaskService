@@ -36,3 +36,13 @@ class TaskAuditModel(Base):
     task: Mapped['TaskModel'] = relationship(
         'TaskModel', back_populates='task_audits', uselist=False, lazy='joined'
     )
+
+    def __repr__(self) -> str:
+        return (
+            f'task_audit_id: {self.task_audit_id},'
+            f'task_id: {self.task_id},'
+            f'field_name: {self.field_name},'
+            f'old_value: {self.old_value},'
+            f'new_value: {self.new_value},'
+            f'changed_at: {self.changed_at}'
+        )

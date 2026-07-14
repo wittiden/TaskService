@@ -12,7 +12,7 @@ class TestDeleteRefreshTokenCase:
     async def test_delete_refresh_token_by_id_good(
         self, mock_session_commands, delete_refresh_token_mock_case
     ):
-        refresh_token = RefreshTokensFactory()
+        refresh_token = RefreshTokensFactory(revoke=True)
 
         mock_session_commands.delete_deactivate_refresh_token_by_id.return_value = (
             refresh_token.refresh_token_id
