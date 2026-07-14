@@ -2,11 +2,18 @@ from collections.abc import AsyncGenerator
 
 from dishka import AsyncContainer, Provider, Scope, make_async_container, provide
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from app.infrastructure.database.config import DatabaseConfig
 from app.infrastructure.redis.config import RedisConfig
-from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
+from app.infrastructure.redis.repositories.current_user.commands import (
+    CurrentUserRedisCommandsRepository,
+)
 from app.infrastructure.unit_of_work.uow import UnitOfWork
 from app.modules.audits.repository.commands import UserAuditCommandsRepository
 from app.modules.audits.repository.queries import UserAuditQueriesRepository
@@ -14,13 +21,28 @@ from app.modules.audits.service.use_cases import CreateUserAuditCase, ShowUserAu
 from app.modules.auth.jwt_config import TokenConfig
 from app.modules.auth.repository.commands import AuthCommandsRepository
 from app.modules.auth.repository.queries import AuthQueriesRepository
-from app.modules.auth.service.use_cases import LoginUserCase, LogoutUserCase, ManageTokenCase, RefreshUserCase, ShowCurrentUserCase
+from app.modules.auth.service.use_cases import (
+    LoginUserCase,
+    LogoutUserCase,
+    ManageTokenCase,
+    RefreshUserCase,
+    ShowCurrentUserCase,
+)
 from app.modules.sessions.repository.commands import SessionCommandsRepository
 from app.modules.sessions.repository.queries import SessionQueriesRepository
-from app.modules.sessions.service.use_cases import DeleteRefreshTokenCase, ShowRefreshTokenCase
+from app.modules.sessions.service.use_cases import (
+    DeleteRefreshTokenCase,
+    ShowRefreshTokenCase,
+)
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
-from app.modules.users.service.use_cases import CreateUserCase, DeleteUserCase, ManageUserCase, ShowUserCase, UpdateUserCase
+from app.modules.users.service.use_cases import (
+    CreateUserCase,
+    DeleteUserCase,
+    ManageUserCase,
+    ShowUserCase,
+    UpdateUserCase,
+)
 
 
 class DatabaseConfigProvider(Provider):
@@ -35,9 +57,17 @@ class DatabaseEngineProvider(Provider):
     """Провайдер по созданию движка бд"""
 
     @provide(scope=Scope.APP)
-    async def database_engine(self, database_config: DatabaseConfig) -> AsyncGenerator[AsyncEngine, None]:
+    async def database_engine(
+        self, database_config: DatabaseConfig
+    ) -> AsyncGenerator[AsyncEngine, None]:
         async_engine = create_async_engine(
-            url=database_config.database_url, echo=False, pool_pre_ping=True, pool_size=10, max_overflow=20, pool_timeout=5, connect_args={'command_timeout': 5}
+            url=database_config.database_url,
+            echo=False,
+            pool_pre_ping=True,
+            pool_size=10,
+            max_overflow=20,
+            pool_timeout=5,
+            connect_args={'command_timeout': 5},
         )
 
         yield async_engine
@@ -49,7 +79,9 @@ class AsyncSessionmakerProvider(Provider):
     """Провайдер по созданию фабрики сессий в бд"""
 
     @provide(scope=Scope.APP)
-    def create_async_sessionmaker(self, async_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+    def create_async_sessionmaker(
+        self, async_engine: AsyncEngine
+    ) -> async_sessionmaker[AsyncSession]:
         return async_sessionmaker(
             bind=async_engine,
             autoflush=False,
@@ -61,7 +93,9 @@ class AsyncSessionProvider(Provider):
     """Провайдер по созданию сессий в бд"""
 
     @provide(scope=Scope.REQUEST)
-    async def create_async_session(self, async_session_factory: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncSession, None]:
+    async def create_async_session(
+        self, async_session_factory: async_sessionmaker[AsyncSession]
+    ) -> AsyncGenerator[AsyncSession, None]:
         async with async_session_factory() as async_session:
             yield async_session
 
@@ -109,7 +143,9 @@ class RedisRepositoriesProvider(Provider):
     scope = Scope.APP
 
     @provide
-    def current_user_redis_commands(self, redis_client: Redis) -> CurrentUserRedisCommandsRepository:
+    def current_user_redis_commands(
+        self, redis_client: Redis
+    ) -> CurrentUserRedisCommandsRepository:
         return CurrentUserRedisCommandsRepository(redis_client)
 
 
@@ -172,11 +208,15 @@ class SessionCasesProvider(Provider):
     scope = Scope.REQUEST
 
     @provide
-    def show_refresh_token_case(self, session_queries: SessionQueriesRepository) -> ShowRefreshTokenCase:
+    def show_refresh_token_case(
+        self, session_queries: SessionQueriesRepository
+    ) -> ShowRefreshTokenCase:
         return ShowRefreshTokenCase(session_queries)
 
     @provide
-    def delete_refresh_token_case(self, session_commands: SessionCommandsRepository) -> DeleteRefreshTokenCase:
+    def delete_refresh_token_case(
+        self, session_commands: SessionCommandsRepository
+    ) -> DeleteRefreshTokenCase:
         return DeleteRefreshTokenCase(session_commands)
 
 
@@ -186,11 +226,15 @@ class UserAuditCasesProvider(Provider):
     scope = Scope.REQUEST
 
     @provide
-    def create_user_audit_case(self, user_audit_commands: UserAuditCommandsRepository) -> CreateUserAuditCase:
+    def create_user_audit_case(
+        self, user_audit_commands: UserAuditCommandsRepository
+    ) -> CreateUserAuditCase:
         return CreateUserAuditCase(user_audit_commands)
 
     @provide
-    def show_user_audit_case(self, user_audit_queries: UserAuditQueriesRepository) -> ShowUserAuditCase:
+    def show_user_audit_case(
+        self, user_audit_queries: UserAuditQueriesRepository
+    ) -> ShowUserAuditCase:
         return ShowUserAuditCase(user_audit_queries)
 
 
@@ -200,15 +244,24 @@ class AuthUseCasesProvider(Provider):
     scope = Scope.REQUEST
 
     @provide
-    def manage_token_case(self, token_config: TokenConfig, auth_commands: AuthCommandsRepository) -> ManageTokenCase:
+    def manage_token_case(
+        self, token_config: TokenConfig, auth_commands: AuthCommandsRepository
+    ) -> ManageTokenCase:
         return ManageTokenCase(token_config, auth_commands)
 
     @provide
-    def login_user_case(self, auth_queries: AuthQueriesRepository, manage_token_case: ManageTokenCase) -> LoginUserCase:
+    def login_user_case(
+        self, auth_queries: AuthQueriesRepository, manage_token_case: ManageTokenCase
+    ) -> LoginUserCase:
         return LoginUserCase(manage_token_case, auth_queries)
 
     @provide
-    def logout_user_case(self, auth_commands: AuthCommandsRepository, token_config: TokenConfig, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> LogoutUserCase:
+    def logout_user_case(
+        self,
+        auth_commands: AuthCommandsRepository,
+        token_config: TokenConfig,
+        current_user_redis_commands: CurrentUserRedisCommandsRepository,
+    ) -> LogoutUserCase:
         return LogoutUserCase(auth_commands, token_config, current_user_redis_commands)
 
     @provide
@@ -220,11 +273,20 @@ class AuthUseCasesProvider(Provider):
         token_config: TokenConfig,
         current_user_redis_commands: CurrentUserRedisCommandsRepository,
     ) -> RefreshUserCase:
-        return RefreshUserCase(manage_token_case, auth_queries, current_user_redis_commands, token_config, auth_commands)
+        return RefreshUserCase(
+            manage_token_case,
+            auth_queries,
+            current_user_redis_commands,
+            token_config,
+            auth_commands,
+        )
 
     @provide
     def show_current_user_case(
-        self, manage_token_case: ManageTokenCase, auth_queries: AuthQueriesRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository
+        self,
+        manage_token_case: ManageTokenCase,
+        auth_queries: AuthQueriesRepository,
+        current_user_redis_commands: CurrentUserRedisCommandsRepository,
     ) -> ShowCurrentUserCase:
         return ShowCurrentUserCase(manage_token_case, auth_queries, current_user_redis_commands)
 
@@ -240,17 +302,29 @@ class UserUseCasesProvider(Provider):
 
     @provide
     def update_user_case(
-        self, user_commands: UserCommandsRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository, create_user_audit_case: CreateUserAuditCase
+        self,
+        user_commands: UserCommandsRepository,
+        current_user_redis_commands: CurrentUserRedisCommandsRepository,
+        create_user_audit_case: CreateUserAuditCase,
     ) -> UpdateUserCase:
         return UpdateUserCase(user_commands, current_user_redis_commands, create_user_audit_case)
 
     @provide
-    def delete_user_case(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, create_user_audit_case: CreateUserAuditCase) -> DeleteUserCase:
+    def delete_user_case(
+        self,
+        user_commands: UserCommandsRepository,
+        logout_user_case: LogoutUserCase,
+        create_user_audit_case: CreateUserAuditCase,
+    ) -> DeleteUserCase:
         return DeleteUserCase(user_commands, logout_user_case, create_user_audit_case)
 
     @provide
     def manage_user_case(
-        self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository, create_user_audit_case: CreateUserAuditCase
+        self,
+        user_commands: UserCommandsRepository,
+        logout_user_case: LogoutUserCase,
+        user_queries: UserQueriesRepository,
+        create_user_audit_case: CreateUserAuditCase,
     ) -> ManageUserCase:
         return ManageUserCase(user_commands, logout_user_case, user_queries, create_user_audit_case)
 

@@ -2,7 +2,11 @@ from redis.asyncio import Redis, RedisError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.infrastructure.http.healthcheck.exceptions import ApplicationHealthError, DatabaseHealthError, RedisHealthError
+from app.infrastructure.http.healthcheck.exceptions import (
+    ApplicationHealthError,
+    DatabaseHealthError,
+    RedisHealthError,
+)
 
 
 def application_healthcheck() -> dict:

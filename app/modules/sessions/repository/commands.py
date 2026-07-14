@@ -16,7 +16,13 @@ class SessionCommandsRepository:
     async def delete_deactivate_refresh_token_by_id(self, refresh_token_id: UUID) -> UUID | None:
         deleted_obj_id = await self._async_session.execute(
             delete(RefreshTokenModel)
-            .where(RefreshTokenModel.refresh_token_id == refresh_token_id, or_(RefreshTokenModel.revoked_at.is_not(None), RefreshTokenModel.expired_at < datetime.now(UTC)))
+            .where(
+                RefreshTokenModel.refresh_token_id == refresh_token_id,
+                or_(
+                    RefreshTokenModel.revoked_at.is_not(None),
+                    RefreshTokenModel.expired_at < datetime.now(UTC),
+                ),
+            )
             .returning(RefreshTokenModel.refresh_token_id)
         )
 

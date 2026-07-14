@@ -16,8 +16,15 @@ class UserAuditQueriesRepository:
         objs = await self._async_session.execute(select(UserAuditModel).offset(offset).limit(limit))
         return list(objs.scalars().all())
 
-    async def select_user_audits_by_user_id(self, user_id: UUID, offset: int = 0, limit: int = 100) -> list[UserAuditModel]:
-        objs = await self._async_session.execute(select(UserAuditModel).where(UserAuditModel.user_id == user_id).offset(offset).limit(limit))
+    async def select_user_audits_by_user_id(
+        self, user_id: UUID, offset: int = 0, limit: int = 100
+    ) -> list[UserAuditModel]:
+        objs = await self._async_session.execute(
+            select(UserAuditModel)
+            .where(UserAuditModel.user_id == user_id)
+            .offset(offset)
+            .limit(limit)
+        )
         return list(objs.scalars().all())
 
     async def select_user_audit_by_id(self, user_audit_id: UUID) -> UserAuditModel | None:

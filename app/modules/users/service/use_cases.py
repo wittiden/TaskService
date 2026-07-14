@@ -4,11 +4,19 @@ from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.user import UserRoleEnum
 from app.common.security.pass_utils import hash_pass
-from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
+from app.infrastructure.redis.repositories.current_user.commands import (
+    CurrentUserRedisCommandsRepository,
+)
 from app.modules.audits.service.use_cases import CreateUserAuditCase
 from app.modules.auth.service.use_cases import LogoutUserCase
 from app.modules.users.contracts.dtos import FullUserInfoDTO, SecurityUserInfoDTO
-from app.modules.users.exceptions import InvalidUserDataError, UserAlreadyBlockedError, UserAlreadyUnblockedError, UserEmailExistError, UserNotFoundError
+from app.modules.users.exceptions import (
+    InvalidUserDataError,
+    UserAlreadyBlockedError,
+    UserAlreadyUnblockedError,
+    UserEmailExistError,
+    UserNotFoundError,
+)
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.guards import UserGuards
@@ -20,7 +28,9 @@ class CreateUserCase:
     def __init__(self, user_commands: UserCommandsRepository) -> None:
         self._user_commands = user_commands
 
-    async def _create(self, name: str, email: str, password: str, role: UserRoleEnum) -> SecurityUserInfoDTO:
+    async def _create(
+        self, name: str, email: str, password: str, role: UserRoleEnum
+    ) -> SecurityUserInfoDTO:
         password_hash = hash_pass(password)
 
         try:
@@ -44,12 +54,19 @@ class CreateUserCase:
 class UpdateUserCase:
     """Кейс по обновлению информации пользователя"""
 
-    def __init__(self, user_commands: UserCommandsRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository, create_user_audit_case: CreateUserAuditCase) -> None:
+    def __init__(
+        self,
+        user_commands: UserCommandsRepository,
+        current_user_redis_commands: CurrentUserRedisCommandsRepository,
+        create_user_audit_case: CreateUserAuditCase,
+    ) -> None:
         self._user_commands = user_commands
         self._current_user_redis_commands = current_user_redis_commands
         self._create_user_audit_case = create_user_audit_case
 
-    async def update_user_params(self, current_user: FullUserInfoDTO, new_params: dict | None) -> SecurityUserInfoDTO:
+    async def update_user_params(
+        self, current_user: FullUserInfoDTO, new_params: dict | None
+    ) -> SecurityUserInfoDTO:
         if not new_params:
             return SecurityUserInfoDTO.model_validate(current_user)
 
@@ -76,13 +93,22 @@ class UpdateUserCase:
             raise UserEmailExistError(str(exc)) from exc
         user = UserGuards.require_user_exist(user)
 
-        await self._current_user_redis_commands.set_current_user(FullUserInfoDTO.model_validate(user))
+        await self._current_user_redis_commands.set_current_user(
+            FullUserInfoDTO.model_validate(user)
+        )
 
         for key, value in new_params.items():
             if 'password_hash' in key:
-                await self._create_user_audit_case.create_user_audit(current_user.user_id, str(key), '*****', '*****')
+                await self._create_user_audit_case.create_user_audit(
+                    current_user.user_id, str(key), '*****', '*****'
+                )
             else:
-                await self._create_user_audit_case.create_user_audit(current_user.user_id, str(key), str(getattr(current_user, key)), str(value))
+                await self._create_user_audit_case.create_user_audit(
+                    current_user.user_id,
+                    str(key),
+                    str(getattr(current_user, key)),
+                    str(value),
+                )
 
         return SecurityUserInfoDTO.model_validate(user)
 
@@ -90,7 +116,12 @@ class UpdateUserCase:
 class DeleteUserCase:
     """Кейс по удалению пользователя"""
 
-    def __init__(self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, create_user_audit_case: CreateUserAuditCase) -> None:
+    def __init__(
+        self,
+        user_commands: UserCommandsRepository,
+        logout_user_case: LogoutUserCase,
+        create_user_audit_case: CreateUserAuditCase,
+    ) -> None:
         self._user_commands = user_commands
         self._logout_user_case = logout_user_case
         self._create_user_audit_case = create_user_audit_case
@@ -101,7 +132,9 @@ class DeleteUserCase:
             raise UserNotFoundError('User with spec parameters not found for close')
         await self._logout_user_case.logout_all_user_devices(current_user)
 
-        await self._create_user_audit_case.create_user_audit(current_user.user_id, 'closed_at', None, str(result))
+        await self._create_user_audit_case.create_user_audit(
+            current_user.user_id, 'closed_at', None, str(result)
+        )
 
     async def delete_user_account(self, user_id: UUID) -> None:
         deleted_obj_id = await self._user_commands.delete_closed_user_by_id(user_id)
@@ -114,7 +147,11 @@ class ManageUserCase:
     """Кейс по менедженгу пользователей"""
 
     def __init__(
-        self, user_commands: UserCommandsRepository, logout_user_case: LogoutUserCase, user_queries: UserQueriesRepository, create_user_audit_case: CreateUserAuditCase
+        self,
+        user_commands: UserCommandsRepository,
+        logout_user_case: LogoutUserCase,
+        user_queries: UserQueriesRepository,
+        create_user_audit_case: CreateUserAuditCase,
     ) -> None:
         self._user_commands = user_commands
         self._logout_user_case = logout_user_case
@@ -131,7 +168,9 @@ class ManageUserCase:
 
         await self._logout_user_case.logout_all_user_devices_by_id(user_id)
 
-        await self._create_user_audit_case.create_user_audit(user_id, 'blocked_at', None, str(user.blocked_at))
+        await self._create_user_audit_case.create_user_audit(
+            user_id, 'blocked_at', None, str(user.blocked_at)
+        )
 
         return FullUserInfoDTO.model_validate(user)
 
@@ -143,7 +182,9 @@ class ManageUserCase:
         user = await self._user_commands.alter_unblock_user_by_id(user_id)
         user = UserGuards.require_user_exist(user)
 
-        await self._create_user_audit_case.create_user_audit(user_id, 'blocked_at', str(blocked_at), None)
+        await self._create_user_audit_case.create_user_audit(
+            user_id, 'blocked_at', str(blocked_at), None
+        )
 
         return FullUserInfoDTO.model_validate(user)
 

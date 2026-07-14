@@ -19,11 +19,15 @@ class ShowRefreshTokenCase:
 
         return FullRefreshTokenInfoDTO.model_validate(obj)
 
-    async def show_user_active_refresh_tokens(self, user_id: UUID, offset: int = 0, limit: int = 100) -> list[FullRefreshTokenInfoDTO]:
+    async def show_user_active_refresh_tokens(
+        self, user_id: UUID, offset: int = 0, limit: int = 100
+    ) -> list[FullRefreshTokenInfoDTO]:
         objs = await self._session_queries.select_user_active_refresh_tokens(user_id, offset, limit)
         return [FullRefreshTokenInfoDTO.model_validate(obj) for obj in objs]
 
-    async def show_refresh_tokens(self, offset: int = 0, limit: int = 100) -> list[FullRefreshTokenInfoDTO]:
+    async def show_refresh_tokens(
+        self, offset: int = 0, limit: int = 100
+    ) -> list[FullRefreshTokenInfoDTO]:
         objs = await self._session_queries.select_refresh_tokens(offset, limit)
         return [FullRefreshTokenInfoDTO.model_validate(obj) for obj in objs]
 
@@ -35,6 +39,8 @@ class DeleteRefreshTokenCase:
         self._session_commands = session_commands
 
     async def delete_refresh_token_by_id(self, refresh_token_id: UUID) -> None:
-        deleted_obj_id = await self._session_commands.delete_deactivate_refresh_token_by_id(refresh_token_id)
+        deleted_obj_id = await self._session_commands.delete_deactivate_refresh_token_by_id(
+            refresh_token_id
+        )
         if deleted_obj_id is None:
             raise RefreshTokenNotFoundError('Refresh token cant found for deletion')

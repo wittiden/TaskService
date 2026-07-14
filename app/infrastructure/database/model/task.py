@@ -19,15 +19,45 @@ class TaskModel(Base):
     __tablename__ = 'tasks'
 
     task_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
-    user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey('users.user_id', ondelete='cascade'), nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC), index=True)
-    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
-    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, onupdate=lambda: datetime.now(UTC))
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
-    important_level: Mapped[TaskImportantLevelEnum] = mapped_column(Enum(TaskImportantLevelEnum, name='task_important_level_enum'), nullable=False, index=True)
-    schedule_type: Mapped[TaskScheduleEnum] = mapped_column(Enum(TaskScheduleEnum, name='task_schedule_enum'), nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey('users.user_id', ondelete='cascade'),
+        nullable=False,
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        index=True,
+    )
+    closed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, onupdate=lambda: datetime.now(UTC)
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    important_level: Mapped[TaskImportantLevelEnum] = mapped_column(
+        Enum(TaskImportantLevelEnum, name='task_important_level_enum'),
+        nullable=False,
+        index=True,
+    )
+    schedule_type: Mapped[TaskScheduleEnum] = mapped_column(
+        Enum(TaskScheduleEnum, name='task_schedule_enum'), nullable=False, index=True
+    )
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     description: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    user: Mapped['UserModel'] = relationship('UserModel', back_populates='tasks', uselist=False, lazy='joined')
-    task_audits: Mapped[list['TaskAuditModel']] = relationship('TaskAuditModel', back_populates='task', uselist=True, lazy='selectin', cascade='all, delete-orphan')
+    user: Mapped['UserModel'] = relationship(
+        'UserModel', back_populates='tasks', uselist=False, lazy='joined'
+    )
+    task_audits: Mapped[list['TaskAuditModel']] = relationship(
+        'TaskAuditModel',
+        back_populates='task',
+        uselist=True,
+        lazy='selectin',
+        cascade='all, delete-orphan',
+    )

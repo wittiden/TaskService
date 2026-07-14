@@ -12,7 +12,12 @@ class UnitOfWork:
     async def __aenter__(self) -> 'UnitOfWork':
         return self
 
-    async def __aexit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ):
         try:
             if exc_type:
                 await self._async_session.rollback()

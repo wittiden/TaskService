@@ -12,8 +12,19 @@ class UserAuditCommandsRepository:
     def __init__(self, async_session: AsyncSession) -> None:
         self._async_session = async_session
 
-    async def insert_user_audit_obj(self, user_id: UUID, field_name: str, old_value: str | None, new_value: str | None) -> None:
-        user_audit = UserAuditModel(user_id=user_id, field_name=field_name, new_value=new_value, old_value=old_value)
+    async def insert_user_audit_obj(
+        self,
+        user_id: UUID,
+        field_name: str,
+        old_value: str | None,
+        new_value: str | None,
+    ) -> None:
+        user_audit = UserAuditModel(
+            user_id=user_id,
+            field_name=field_name,
+            new_value=new_value,
+            old_value=old_value,
+        )
 
         try:
             self._async_session.add(user_audit)

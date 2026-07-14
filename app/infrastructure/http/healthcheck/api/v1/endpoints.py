@@ -3,7 +3,11 @@ from fastapi import APIRouter
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.infrastructure.http.healthcheck.utils import application_healthcheck, database_healthcheck, redis_healthcheck
+from app.infrastructure.http.healthcheck.utils import (
+    application_healthcheck,
+    database_healthcheck,
+    redis_healthcheck,
+)
 
 health_router = APIRouter(prefix='/api/v1/health', tags=['health'])
 

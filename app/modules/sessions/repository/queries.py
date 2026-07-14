@@ -13,14 +13,24 @@ class SessionQueriesRepository:
     def __init__(self, async_session: AsyncSession) -> None:
         self._async_session = async_session
 
-    async def select_refresh_tokens(self, offset: int = 0, limit: int = 100) -> list[RefreshTokenModel]:
-        objs = await self._async_session.execute(select(RefreshTokenModel).offset(offset).limit(limit))
+    async def select_refresh_tokens(
+        self, offset: int = 0, limit: int = 100
+    ) -> list[RefreshTokenModel]:
+        objs = await self._async_session.execute(
+            select(RefreshTokenModel).offset(offset).limit(limit)
+        )
         return list(objs.scalars().all())
 
-    async def select_user_active_refresh_tokens(self, user_id: UUID, offset: int = 0, limit: int = 100) -> list[RefreshTokenModel]:
+    async def select_user_active_refresh_tokens(
+        self, user_id: UUID, offset: int = 0, limit: int = 100
+    ) -> list[RefreshTokenModel]:
         objs = await self._async_session.execute(
             select(RefreshTokenModel)
-            .where(RefreshTokenModel.user_id == user_id, RefreshTokenModel.revoked_at.is_(None), RefreshTokenModel.expired_at > datetime.now(UTC))
+            .where(
+                RefreshTokenModel.user_id == user_id,
+                RefreshTokenModel.revoked_at.is_(None),
+                RefreshTokenModel.expired_at > datetime.now(UTC),
+            )
             .offset(offset)
             .limit(limit)
         )

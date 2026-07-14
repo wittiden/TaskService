@@ -3,11 +3,20 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import jwt
-from jwt import DecodeError, InvalidAlgorithmError, InvalidAudienceError, InvalidKeyError, InvalidSignatureError, InvalidTokenError
+from jwt import (
+    DecodeError,
+    InvalidAlgorithmError,
+    InvalidAudienceError,
+    InvalidKeyError,
+    InvalidSignatureError,
+    InvalidTokenError,
+)
 
 from app.common.enums.user import UserRoleEnum
 from app.common.security.pass_utils import verify_pass
-from app.infrastructure.redis.repositories.current_user.commands import CurrentUserRedisCommandsRepository
+from app.infrastructure.redis.repositories.current_user.commands import (
+    CurrentUserRedisCommandsRepository,
+)
 from app.modules.auth.contracts.dtos import TokenInfoDTO
 from app.modules.auth.exceptions import (
     DecodeTokenError,
@@ -135,7 +144,9 @@ class ManageTokenCase:
 class LoginUserCase:
     """Кейс по входу в аккаунт пользователя"""
 
-    def __init__(self, manage_token_case: ManageTokenCase, auth_queries: AuthQueriesRepository) -> None:
+    def __init__(
+        self, manage_token_case: ManageTokenCase, auth_queries: AuthQueriesRepository
+    ) -> None:
         self._manage_token_case = manage_token_case
         self._auth_queries = auth_queries
 
@@ -164,13 +175,20 @@ class LoginUserCase:
 class LogoutUserCase:
     """Кейс по выходу из аккаунта пользователя"""
 
-    def __init__(self, auth_commands: AuthCommandsRepository, token_config: TokenConfig, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> None:
+    def __init__(
+        self,
+        auth_commands: AuthCommandsRepository,
+        token_config: TokenConfig,
+        current_user_redis_commands: CurrentUserRedisCommandsRepository,
+    ) -> None:
         self._auth_commands = auth_commands
         self._token_config = token_config
         self._current_user_redis_commands = current_user_redis_commands
 
     async def logout_user_device(self, current_user: FullUserInfoDTO) -> None:
-        await self._auth_commands.alter_user_refresh_tokens_revoked_param(current_user.user_id, self._token_config.REFRESH_TOKEN_AUDIENCE)
+        await self._auth_commands.alter_user_refresh_tokens_revoked_param(
+            current_user.user_id, self._token_config.REFRESH_TOKEN_AUDIENCE
+        )
         await self._current_user_redis_commands.delete_current_user(current_user.user_id)
 
     async def logout_all_user_devices(self, current_user: FullUserInfoDTO) -> None:
@@ -242,7 +260,12 @@ class RefreshUserCase:
 class ShowCurrentUserCase:
     """Кейс по показу текущего пользователя"""
 
-    def __init__(self, manage_token_case: ManageTokenCase, auth_queries: AuthQueriesRepository, current_user_redis_commands: CurrentUserRedisCommandsRepository) -> None:
+    def __init__(
+        self,
+        manage_token_case: ManageTokenCase,
+        auth_queries: AuthQueriesRepository,
+        current_user_redis_commands: CurrentUserRedisCommandsRepository,
+    ) -> None:
         self._manage_token_case = manage_token_case
         self._auth_queries = auth_queries
         self._current_user_redis_commands = current_user_redis_commands
@@ -260,7 +283,9 @@ class ShowCurrentUserCase:
             user = await self._auth_queries.select_user_by_id(user_id)
             user = UserGuards.require_user_exist(user)
 
-            await self._current_user_redis_commands.set_current_user(FullUserInfoDTO.model_validate(user))
+            await self._current_user_redis_commands.set_current_user(
+                FullUserInfoDTO.model_validate(user)
+            )
 
         UserGuards.require_user_closed(user)
         UserGuards.require_user_blocked(user)

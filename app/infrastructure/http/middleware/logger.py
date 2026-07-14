@@ -21,7 +21,9 @@ class LoggerMiddleware(BaseHTTPMiddleware):
 
         process_time = (perf_counter() - now) * 1000
         process_time_str = f'{process_time:.2f} ms'
-        logger_str = f'{request_id} | {request.url.path} | {response.status_code} | {process_time:.2f} ms'
+        logger_str = (
+            f'{request_id} | {request.url.path} | {response.status_code} | {process_time:.2f} ms'
+        )
 
         if 200 <= response.status_code < 300:
             logger.info(logger_str)

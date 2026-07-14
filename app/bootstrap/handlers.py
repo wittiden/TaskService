@@ -2,7 +2,10 @@ from fastapi import FastAPI
 from slowapi.errors import RateLimitExceeded
 
 from app.common.exceptions.base_exception import RouterError
-from app.common.exceptions.handlers import app_exception_handler, rate_limit_exceeded_handler
+from app.common.exceptions.handlers import (
+    app_exception_handler,
+    rate_limit_exceeded_handler,
+)
 
 HANDLER_LIST = [app_exception_handler, rate_limit_exceeded_handler]
 
