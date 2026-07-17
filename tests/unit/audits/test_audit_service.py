@@ -13,7 +13,7 @@ class TestCreateUserAuditCase:
     async def test_create_user_audit_good(
         self, mock_user_audit_commands, create_user_audit_mock_case
     ):
-        user_audit = UserAuditsFactory()
+        user_audit = UserAuditsFactory.build()
 
         await create_user_audit_mock_case.create_user_audit(
             user_audit.user_id, user_audit.field_name, user_audit.old_value, user_audit.new_value
@@ -28,7 +28,7 @@ class TestCreateUserAuditCase:
     async def test_create_user_audit_bad(
         self, mock_user_audit_commands, create_user_audit_mock_case
     ):
-        user_audit = UserAuditsFactory()
+        user_audit = UserAuditsFactory.build()
 
         mock_user_audit_commands.insert_user_audit_obj.side_effect = IntegrityError(
             statement=None, params=None, orig=Exception('duplicate key')

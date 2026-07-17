@@ -33,7 +33,7 @@ class TestCreateUserCase:
         is_admin,
         is_vip,
     ):
-        user = UsersFactory(admin=is_admin, vip=is_vip)
+        user = UsersFactory.build(admin=is_admin, vip=is_vip)
 
         mock_hash_pass = mocker.patch(
             'app.modules.users.service.use_cases.hash_pass',
@@ -90,7 +90,7 @@ class TestCreateUserCase:
         is_admin,
         is_vip,
     ):
-        user = UsersFactory(admin=is_admin, vip=is_vip)
+        user = UsersFactory.build(admin=is_admin, vip=is_vip)
 
         mock_hash_pass = mocker.patch(
             'app.modules.users.service.use_cases.hash_pass',
@@ -140,7 +140,7 @@ class TestUpdateUserCase:
         update_user_mock_case,
         mock_create_user_audit_case,
     ):
-        user = UsersFactory()
+        user = UsersFactory.build()
 
         if new_params is None:
             result = await update_user_mock_case.update_user_params(
@@ -195,7 +195,7 @@ class TestUpdateUserCase:
         mock_current_user_redis_commands,
         mock_create_user_audit_case,
     ):
-        user = UsersFactory()
+        user = UsersFactory.build()
         new_params = {
             'name': 'new_name',
             'email': 'new_email@example.com',
@@ -235,7 +235,7 @@ class TestDeleteUserCase:
         delete_user_mock_case,
         mock_create_user_audit_case,
     ):
-        user = UsersFactory(close=True)
+        user = UsersFactory.build(close=True)
         user_model = UserModel(
             user_id=user.user_id,
             name=user.name,
@@ -269,7 +269,7 @@ class TestDeleteUserCase:
         mock_create_user_audit_case,
         delete_user_mock_case,
     ):
-        user = UsersFactory()
+        user = UsersFactory.build()
 
         mock_user_commands.alter_user_closed_param.return_value = None
 
@@ -285,7 +285,7 @@ class TestDeleteUserCase:
     async def test_delete_user_account_good(
         self, mock_user_commands, mock_logout_user_case, delete_user_mock_case
     ):
-        user = UsersFactory(close=True)
+        user = UsersFactory.build(close=True)
 
         mock_user_commands.delete_closed_user_by_id.return_value = user.user_id
 
@@ -299,7 +299,7 @@ class TestDeleteUserCase:
     async def test_delete_user_account_bad(
         self, mock_user_commands, mock_logout_user_case, delete_user_mock_case
     ):
-        user = UsersFactory()
+        user = UsersFactory.build()
         mock_user_commands.delete_closed_user_by_id.return_value = None
 
         with pytest.raises(UserNotFoundError):
@@ -322,7 +322,7 @@ class TestManageUserCase:
         manage_user_mock_case,
         mock_create_user_audit_case,
     ):
-        user = UsersFactory(block=True)
+        user = UsersFactory.build(block=True)
 
         mock_user_queries.select_user_block_param.return_value = None
 
@@ -360,7 +360,7 @@ class TestManageUserCase:
         mock_create_user_audit_case,
         manage_user_mock_case,
     ):
-        user = UsersFactory(block=True)
+        user = UsersFactory.build(block=True)
 
         mock_user_queries.select_user_block_param.return_value = user.blocked_at
 
@@ -381,7 +381,7 @@ class TestManageUserCase:
         manage_user_mock_case,
         mock_create_user_audit_case,
     ):
-        user = UsersFactory(block=True)
+        user = UsersFactory.build(block=True)
 
         mock_user_queries.select_user_block_param.return_value = user.blocked_at
 
@@ -417,7 +417,7 @@ class TestManageUserCase:
         mock_user_commands,
         mock_create_user_audit_case,
     ):
-        user = UsersFactory()
+        user = UsersFactory.build()
 
         mock_user_queries.select_user_block_param.return_value = user.blocked_at
 

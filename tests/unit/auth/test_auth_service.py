@@ -17,7 +17,7 @@ class TestLoginUserCase:
     async def test_login_user_good(
         self, mocker: MockerFixture, mock_auth_queries, mock_manage_token_case, login_user_mock_case
     ):
-        user = UsersFactory()
+        user = UsersFactory.build()
         mock_auth_queries.select_user_id_pass_role_by_email.return_value = {
             'password_hash': user.password_hash,
             'user_id': user.user_id,
@@ -67,7 +67,7 @@ class TestLoginUserCase:
         mock_manage_token_case,
         login_user_mock_case,
     ):
-        user = UsersFactory(block=is_block, close=is_close)
+        user = UsersFactory.build(block=is_block, close=is_close)
 
         mock_auth_queries.select_user_id_pass_role_by_email.return_value = {
             'password_hash': user.password_hash,
@@ -103,7 +103,7 @@ class TestLogoutUserCase:
         mock_token_config,
         logout_user_mock_case,
     ):
-        user = UsersFactory()
+        user = UsersFactory.build()
         mock_token_config.REFRESH_TOKEN_AUDIENCE = 'refresh_api'
 
         await logout_user_mock_case.logout_user_device(FullUserInfoDTO.model_validate(user))
@@ -118,7 +118,7 @@ class TestLogoutUserCase:
     async def test_logout_all_user_devices_good(
         self, mock_auth_commands, mock_current_user_redis_commands, logout_user_mock_case
     ):
-        user = UsersFactory()
+        user = UsersFactory.build()
 
         await logout_user_mock_case.logout_all_user_devices(FullUserInfoDTO.model_validate(user))
 
@@ -132,7 +132,7 @@ class TestLogoutUserCase:
     async def test_logout_all_user_devices_by_id_good(
         self, mock_auth_commands, mock_current_user_redis_commands, logout_user_mock_case
     ):
-        user = UsersFactory()
+        user = UsersFactory.build()
 
         await logout_user_mock_case.logout_all_user_devices_by_id(user.user_id)
 
@@ -158,8 +158,8 @@ class TestRefreshUserCase:
     ):
         token = 'jhfqleyfqf;lqngn;gqlkg'
         version = 1
-        refresh_token = RefreshTokensFactory()
-        user = UsersFactory()
+        refresh_token = RefreshTokensFactory.build()
+        user = UsersFactory.build()
 
         mock_token_config.REFRESH_TOKEN_VERSION = 1
 
@@ -214,7 +214,7 @@ class TestRefreshUserCase:
         mock_auth_commands,
     ):
         token = 'gnjiwrgghqgv9u7qvhonq'
-        refresh_token = RefreshTokensFactory()
+        refresh_token = RefreshTokensFactory.build()
         version = 0
 
         mock_token_config.REFRESH_TOKEN_VERSION = 1
@@ -248,7 +248,7 @@ class TestRefreshUserCase:
         mock_auth_commands,
     ):
         token = 'gnjiwrgghqgv9u7qvhonq'
-        refresh_token = RefreshTokensFactory(revoke=True)
+        refresh_token = RefreshTokensFactory.build(revoke=True)
         version = 1
 
         mock_token_config.REFRESH_TOKEN_VERSION = 1
@@ -305,8 +305,8 @@ class TestShowCurrentUserCase:
         is_standard,
     ):
         token = 'nfjgorg87ghqupbur'
-        refresh_token = RefreshTokensFactory()
-        user = UsersFactory(admin=is_admin, vip=is_vip)
+        refresh_token = RefreshTokensFactory.build()
+        user = UsersFactory.build(admin=is_admin, vip=is_vip)
 
         mock_manage_token_case.decode_access_token.return_value = {
             'sub': refresh_token.user_id,
@@ -340,8 +340,8 @@ class TestShowCurrentUserCase:
         mock_current_user_redis_commands,
     ):
         token = 'nfjgorg87ghqupbur'
-        refresh_token = RefreshTokensFactory()
-        user = UsersFactory()
+        refresh_token = RefreshTokensFactory.build()
+        user = UsersFactory.build()
 
         mock_manage_token_case.decode_access_token.return_value = {
             'sub': refresh_token.user_id,
@@ -385,8 +385,8 @@ class TestShowCurrentUserCase:
         is_admin,
     ):
         token = 'nfjgorg87ghqupbur'
-        refresh_token = RefreshTokensFactory()
-        user = UsersFactory()
+        refresh_token = RefreshTokensFactory.build()
+        user = UsersFactory.build()
 
         mock_manage_token_case.decode_access_token.return_value = {
             'sub': refresh_token.user_id,

@@ -9,8 +9,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.infrastructure.database.config import DatabaseConfig
-from app.infrastructure.redis.config import RedisConfig
+from app.infrastructure.database.config import DatabaseConfig, database_config
+from app.infrastructure.redis.config import RedisConfig, redis_config
 from app.infrastructure.redis.repositories.current_user.commands import (
     CurrentUserRedisCommandsRepository,
 )
@@ -50,7 +50,7 @@ class DatabaseConfigProvider(Provider):
 
     @provide(scope=Scope.APP)
     def database_config(self) -> DatabaseConfig:
-        return DatabaseConfig()
+        return database_config
 
 
 class DatabaseEngineProvider(Provider):
@@ -105,7 +105,7 @@ class RedisConfigProvider(Provider):
 
     @provide(scope=Scope.APP)
     def redis_config(self) -> RedisConfig:
-        return RedisConfig()
+        return redis_config
 
 
 class RedisClientProvider(Provider):

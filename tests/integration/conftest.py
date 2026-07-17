@@ -47,6 +47,8 @@ async def database_engine(postgres_container) -> AsyncGenerator[AsyncEngine, Non
         connect_args={'command_timeout': 5},
     )
 
+    print(f'Database URL: {database_config.database_url}')
+
     try:
         yield async_engine
     finally:
@@ -71,12 +73,11 @@ async def async_session(session_factory) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture(scope='session')
-async def redis_container() -> AsyncGenerator[AsyncRedisContainer, None]:
-    async with AsyncRedisContainer('redis:8.0-alpine') as redis:
+def redis_container() -> Generator[AsyncRedisContainer, None]:
+    with AsyncRedisContainer('redis:8.0-alpine') as redis:
         redis_config.REDIS_PASS = redis.password
         redis_config.REDIS_HOST = redis.get_container_host_ip()
         redis_config.REDIS_PORT = redis.get_exposed_port(6379)
-        redis_config.REDIS_DB = redis.dbname
 
         yield redis
 
