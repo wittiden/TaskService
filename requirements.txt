@@ -43,3 +43,4 @@ httpx~=0.28.1
 testcontainers~=4.14.2
 faker~=40.28.1
 factory-boy~=3.3.3
+asgi-lifespan~=2.1.0

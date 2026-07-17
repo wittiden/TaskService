@@ -10,4 +10,5 @@ limiter = Limiter(
     storage_uri=redis_config.redis_rate_limit_db_url,
     in_memory_fallback_enabled=True,
     in_memory_fallback=['100/minute'],
+    enabled=True,
 )
