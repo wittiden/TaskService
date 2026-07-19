@@ -1,3 +1,4 @@
+from dishka import AsyncContainer
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 
@@ -11,12 +12,12 @@ from app.infrastructure.http.middleware.CORS.config import cors_config
 from app.infrastructure.http.middleware.CORS.setup import setup_cors
 
 
-def setup_application() -> FastAPI:
+def setup_application(container: AsyncContainer = async_container) -> FastAPI:
     app = FastAPI(lifespan=lifespan)
 
     app.state.limiter = limiter
 
-    setup_dishka(async_container, app)
+    setup_dishka(container, app)
 
     setup_middlewares(app)
     setup_cors(app, cors_config)
