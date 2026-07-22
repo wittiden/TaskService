@@ -37,3 +37,40 @@ class TestUserAPI:
         assert response_data['name'] == request_data['name']
         assert response_data['email'] == request_data['email']
         assert 'password' not in response_data
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_update_me_endpoint_good(self, current_standard):
+        user = UsersFactory()
+        request_data = {
+            'name': user.name,
+            'email': None,
+        }
+
+        response = await current_standard.patch(
+            url='/api/v1/users/me',
+            json=request_data,
+        )
+        response_data = response.json()
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response_data['name'] == request_data['name']
+        assert response_data['email'] != request_data['email']
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_close_my_account_endpoint_good(self, current_standard):
+        response = await current_standard.patch(url='/api/v1/users/me/close')
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_delete_user_account_endpoint_good(self, current_admin, async_session):
+        user = UsersFactory(close=True)
+        async_session.add(user)
+        await async_session.commit()
+
+        delete_response = await current_admin.delete(url=f'/api/v1/admin/users/{user.user_id}')
+
+        assert delete_response.status_code == status.HTTP_204_NO_CONTENT
