@@ -20,6 +20,7 @@ from app.bootstrap.application import setup_application
 from app.container.container import create_async_container
 from app.infrastructure.database.config import database_config
 from app.infrastructure.redis.config import redis_config
+from tests.factories.user import UsersFactory
 
 logger.disable('app.infrastructure.http.lifespan')
 logger.disable('app.infrastructure.http.middleware.logger')
@@ -40,6 +41,7 @@ def postgres_container() -> Generator[PostgresContainer, None]:
         yield postgres
 
 
+# ✅ Раскомментировано
 @pytest.fixture(scope='session')
 async def database_engine(postgres_container) -> AsyncGenerator[AsyncEngine, None]:
     async_engine = create_async_engine(
@@ -58,24 +60,20 @@ async def database_engine(postgres_container) -> AsyncGenerator[AsyncEngine, Non
         await async_engine.dispose()
 
 
+# ✅ Раскомментировано
 @pytest.fixture(scope='session')
 def async_session_factory(database_engine) -> async_sessionmaker:
-    async_session_factory = async_sessionmaker(
+    return async_sessionmaker(
         bind=database_engine,
         autoflush=False,
         expire_on_commit=False,
     )
 
-    return async_session_factory
-
 
 @pytest.fixture
 async def async_session(async_session_factory) -> AsyncGenerator[AsyncSession, None]:
     async with async_session_factory() as async_session:
-        try:
-            yield async_session
-        finally:
-            await async_session.rollback()
+        yield async_session
 
 
 @pytest.fixture(scope='session')
@@ -108,9 +106,9 @@ async def redis_client(redis_container) -> AsyncGenerator[Redis, None]:
 
 @pytest.fixture
 async def client(postgres_container, redis_container) -> AsyncGenerator[AsyncClient, None]:
-    test_async_container = create_async_container()
+    container = create_async_container()
 
-    app = setup_application(test_async_container)
+    app = setup_application(container=container)
     app.state.limiter.enabled = False
 
     async with (
@@ -122,3 +120,74 @@ async def client(postgres_container, redis_container) -> AsyncGenerator[AsyncCli
         ) as async_client,
     ):
         yield async_client
+
+
+async def _row_user(client, is_admin: bool = False, is_vip: bool = False):
+    user = UsersFactory(admin=is_admin, vip=is_vip)
+    password = 'TestPassword123!'  # ✅ Оригинальный пароль
+
+    request_data = {
+        'name': user.name,
+        'email': user.email,
+        'password': password,  # ✅ Оригинальный пароль
+    }
+
+    url = '/api/v1/users/standard'
+    if is_admin:
+        url = '/api/v1/users/admin'
+    elif is_vip:  # ✅ elif, чтобы не перезаписать admin
+        url = '/api/v1/users/vip'
+
+    await client.post(
+        url=url,
+        json=request_data,
+    )
+
+    login_request_data = {
+        'email': request_data['email'],
+        'password': password,  # ✅ Оригинальный пароль
+    }
+
+    login_response = await client.post(
+        '/api/v1/auth/login',
+        json=login_request_data,
+    )
+    login_response_data = login_response.json()
+
+    client.headers = {
+        'Authorization': f'Bearer {login_response_data["access_token"]}',
+        'Content-Type': 'application/json',
+    }
+
+    return client
+
+
+@pytest.fixture
+async def current_standard(client):
+    return await _row_user(client)
+
+
+@pytest.fixture
+async def current_admin(client):
+    return await _row_user(client, is_admin=True)
+
+
+@pytest.fixture
+async def current_vip(client):
+    return await _row_user(client, is_vip=True)
+
+
+@pytest.fixture
+async def user(client):
+    user = UsersFactory()
+    password = 'TestPassword123!'
+
+    request_data = {
+        'name': user.name,
+        'email': user.email,
+        'password': password,
+    }
+
+    response = await client.post('/api/v1/users/standard', json=request_data)
+
+    return response.json()

@@ -26,6 +26,7 @@ class FullUserInfoDTO(BaseModel):
 class SecurityUserInfoDTO(BaseModel):
     """Схема для передачи открытой информации пользователя"""
 
+    user_id: UUID
     name: str
     email: str
     role: UserRoleEnum
