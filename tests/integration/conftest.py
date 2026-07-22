@@ -49,7 +49,7 @@ def redis_container():
         yield redis
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def container(postgres_container, redis_container):
     return create_async_container()
 

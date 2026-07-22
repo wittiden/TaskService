@@ -71,6 +71,67 @@ class TestUserAPI:
         async_session.add(user)
         await async_session.commit()
 
-        delete_response = await current_admin.delete(url=f'/api/v1/admin/users/{user.user_id}')
+        response = await current_admin.delete(url=f'/api/v1/admin/users/{user.user_id}')
 
-        assert delete_response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_block_user_account_endpoint_good(self, current_admin, async_session):
+        user = UsersFactory()
+        async_session.add(user)
+        await async_session.commit()
+
+        response = await current_admin.patch(
+            url=f'/api/v1/admin/users/block/{user.user_id}',
+        )
+        response_data = response.json()
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response_data['blocked_at']
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_unblock_user_account_endpoint_good(self, current_admin, async_session):
+        user = UsersFactory(block=True)
+        async_session.add(user)
+        await async_session.commit()
+
+        response = await current_admin.patch(
+            url=f'/api/v1/admin/users/unblock/{user.user_id}',
+        )
+        response_data = response.json()
+
+        assert response.status_code == status.HTTP_200_OK
+        assert not response_data['blocked_at']
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_show_me_endpoint_good(self, current_standard):
+        response = await current_standard.get(
+            url='/api/v1/users/me',
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_show_user_by_id_endpoint_good(self, current_admin, async_session):
+        user = UsersFactory()
+        async_session.add(user)
+        await async_session.commit()
+
+        response = await current_admin.get(
+            url=f'/api/v1/admin/users/{user.user_id}',
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_show_users_endpoint_good(self, current_admin):
+        response = await current_admin.get(
+            url='/api/v1/admin/users/',
+        )
+
+        assert response.status_code == status.HTTP_200_OK
