@@ -1,6 +1,7 @@
 import pytest
 from fastapi import status
 
+from app.modules.sessions.contracts.dtos import FullRefreshTokenInfoDTO
 from tests.factories.refresh_token import RefreshTokensFactory
 
 
@@ -39,6 +40,7 @@ class TestSessionAPI:
         )
 
         assert response.status_code == status.HTTP_200_OK
+        assert response.json().keys() == FullRefreshTokenInfoDTO.model_fields.keys()
 
     @pytest.mark.integration
     @pytest.mark.asyncio

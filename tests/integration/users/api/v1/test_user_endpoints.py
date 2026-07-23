@@ -1,6 +1,7 @@
 import pytest
 from fastapi import status
 
+from app.modules.users.contracts.dtos import FullUserInfoDTO, SecurityUserInfoDTO
 from tests.factories.user import UsersFactory
 
 
@@ -34,6 +35,7 @@ class TestUserAPI:
         response_data = response.json()
 
         assert response.status_code == status.HTTP_201_CREATED
+        assert response_data.keys() == SecurityUserInfoDTO.model_fields.keys()
         assert response_data['name'] == request_data['name']
         assert response_data['email'] == request_data['email']
         assert 'password' not in response_data
@@ -54,6 +56,7 @@ class TestUserAPI:
         response_data = response.json()
 
         assert response.status_code == status.HTTP_200_OK
+        assert response_data.keys() == SecurityUserInfoDTO.model_fields.keys()
         assert response_data['name'] == request_data['name']
         assert response_data['email'] != request_data['email']
 
@@ -88,6 +91,7 @@ class TestUserAPI:
         response_data = response.json()
 
         assert response.status_code == status.HTTP_200_OK
+        assert response_data.keys() == FullUserInfoDTO.model_fields.keys()
         assert response_data['blocked_at']
 
     @pytest.mark.integration
@@ -103,6 +107,7 @@ class TestUserAPI:
         response_data = response.json()
 
         assert response.status_code == status.HTTP_200_OK
+        assert response_data.keys() == FullUserInfoDTO.model_fields.keys()
         assert not response_data['blocked_at']
 
     @pytest.mark.integration
@@ -113,6 +118,7 @@ class TestUserAPI:
         )
 
         assert response.status_code == status.HTTP_200_OK
+        assert response.json().keys() == SecurityUserInfoDTO.model_fields.keys()
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -126,6 +132,7 @@ class TestUserAPI:
         )
 
         assert response.status_code == status.HTTP_200_OK
+        assert response.json().keys() == FullUserInfoDTO.model_fields.keys()
 
     @pytest.mark.integration
     @pytest.mark.asyncio
