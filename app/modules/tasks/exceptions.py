@@ -14,3 +14,8 @@ class TaskInvalidDataError(TaskRouterError):
 class TaskNotFoundError(TaskRouterError):
     title = 'Task not found error'
     status_code = 404
+
+
+class TaskLimitError(TaskRouterError):
+    title = 'Task limit error'
+    status_code = 409

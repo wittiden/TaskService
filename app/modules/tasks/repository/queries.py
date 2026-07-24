@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database.model import TaskModel
@@ -61,3 +61,10 @@ class TaskQueriesRepository:
             .limit(limit)
         )
         return list(tasks.scalars().all())
+
+    async def select_user_tasks_count(self, user_id: UUID) -> int:
+        count = await self._async_session.execute(
+            select(func.count(TaskModel.user_id)).where(TaskModel.user_id == user_id)
+        )
+        count = count.scalar()
+        return count if count is not None else 0

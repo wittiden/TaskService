@@ -1,39 +1,65 @@
 from uuid import UUID
 
+from config import TaskConfig
 from contracts.dtos import FullTaskInfoDTO, SecurityTaskInfoDTO
-from exceptions import TaskInvalidDataError
+from exceptions import TaskInvalidDataError, TaskLimitError
 from repository.commands import TaskCommandsRepository
 from repository.queries import TaskQueriesRepository
 from service.guards import TaskGuards
 from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.task import TaskImportantLevelEnum, TaskScheduleEnum
+from app.common.enums.user import UserRoleEnum
+from app.modules.users.contracts.dtos import FullUserInfoDTO
 
 
 class CreateTaskCase:
     """Кейс по созданию задач"""
 
-    def __init__(self, task_commands: TaskCommandsRepository) -> None:
+    def __init__(
+        self,
+        task_commands: TaskCommandsRepository,
+        task_config: TaskConfig,
+        task_queries: TaskQueriesRepository,
+    ) -> None:
         self._task_commands = task_commands
+        self._task_config = task_config
+        self._task_queries = task_queries
 
     async def create_task(
         self,
-        user_id: UUID,
+        current_user: FullUserInfoDTO,
         important_level: TaskImportantLevelEnum,
         schedule_type: TaskScheduleEnum,
         title: str,
         description: str | None,
-    ):
+    ) -> SecurityTaskInfoDTO:
+
+        count = await self._task_queries.select_user_tasks_count(current_user.user_id)
+        if (
+            current_user.role == UserRoleEnum.STANDARD
+            and count > self._task_config.STANDARD_TASK_COUNT_LIMIT
+        ):
+            raise TaskLimitError(
+                f'Tasks limit for standard user = {self._task_config.STANDARD_TASK_COUNT_LIMIT}'
+            )
+        elif (
+            current_user.role == UserRoleEnum.VIP and count > self._task_config.VIP_TASK_COUNT_LIMIT
+        ):
+            raise TaskLimitError(
+                f'Tasks limit for vip user = {self._task_config.VIP_TASK_COUNT_LIMIT}'
+            )
+
         try:
             task = await self._task_commands.insert_task(
-                user_id, important_level, schedule_type, title, description
+                current_user.user_id, important_level, schedule_type, title, description
             )
         except IntegrityError as exc:
             raise TaskInvalidDataError(str(exc)) from exc
 
         task = TaskGuards.require_create_task_exist(task)
 
-        return task
+        return SecurityTaskInfoDTO.model_validate(task)
 
 
 class UpdateTaskCase:

@@ -34,6 +34,7 @@ from app.modules.sessions.service.use_cases import (
     DeleteRefreshTokenCase,
     ShowRefreshTokenCase,
 )
+from app.modules.tasks.config import TaskConfig
 from app.modules.tasks.repository.commands import TaskCommandsRepository
 from app.modules.tasks.repository.queries import TaskQueriesRepository
 from app.modules.tasks.service.use_cases import CreateTaskCase, ShowTaskCase
@@ -159,6 +160,14 @@ class UnitOfWorkProvider(Provider):
     async def unit_of_work(self, async_session: AsyncSession) -> AsyncGenerator[UnitOfWork, None]:
         async with UnitOfWork(async_session) as uow:
             yield uow
+
+
+class TaskConfigProvider(Provider):
+    """Провайдер по создании конфигурации задач"""
+
+    @provide(scope=Scope.REQUEST)
+    def task_config(self) -> TaskConfig:
+        return TaskConfig()
 
 
 class CommandsRepositoryProvider(Provider):
@@ -350,8 +359,13 @@ class TaskUseCasesProvider(Provider):
     scope = Scope.REQUEST
 
     @provide
-    def create_task_case(self, task_commands: TaskCommandsRepository) -> CreateTaskCase:
-        return CreateTaskCase(task_commands)
+    def create_task_case(
+        self,
+        task_commands: TaskCommandsRepository,
+        task_config: TaskConfig,
+        task_queries: TaskQueriesRepository,
+    ) -> CreateTaskCase:
+        return CreateTaskCase(task_commands, task_config, task_queries)
 
     @provide
     def show_task_case(self, task_queries: TaskQueriesRepository) -> ShowTaskCase:
