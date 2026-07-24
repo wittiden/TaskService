@@ -34,6 +34,9 @@ from app.modules.sessions.service.use_cases import (
     DeleteRefreshTokenCase,
     ShowRefreshTokenCase,
 )
+from app.modules.tasks.repository.commands import TaskCommandsRepository
+from app.modules.tasks.repository.queries import TaskQueriesRepository
+from app.modules.tasks.service.use_cases import CreateTaskCase, ShowTaskCase
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.use_cases import (
@@ -179,6 +182,10 @@ class CommandsRepositoryProvider(Provider):
     def user_audit_commands_repo(self, async_session: AsyncSession) -> UserAuditCommandsRepository:
         return UserAuditCommandsRepository(async_session)
 
+    @provide
+    def task_commands_repo(self, async_session: AsyncSession) -> TaskCommandsRepository:
+        return TaskCommandsRepository(async_session)
+
 
 class QueriesRepositoryProvider(Provider):
     """Провайдер по созданию queries репозиториев"""
@@ -200,6 +207,10 @@ class QueriesRepositoryProvider(Provider):
     @provide
     def user_audit_queries_repo(self, async_session: AsyncSession) -> UserAuditQueriesRepository:
         return UserAuditQueriesRepository(async_session)
+
+    @provide
+    def task_queries_repo(self, async_session: AsyncSession) -> TaskQueriesRepository:
+        return TaskQueriesRepository(async_session)
 
 
 class SessionCasesProvider(Provider):
@@ -333,6 +344,20 @@ class UserUseCasesProvider(Provider):
         return ShowUserCase(user_queries)
 
 
+class TaskUseCasesProvider(Provider):
+    """Провайдер по созданию кейсов задач"""
+
+    scope = Scope.REQUEST
+
+    @provide
+    def create_task_case(self, task_commands: TaskCommandsRepository) -> CreateTaskCase:
+        return CreateTaskCase(task_commands)
+
+    @provide
+    def show_task_case(self, task_queries: TaskQueriesRepository) -> ShowTaskCase:
+        return ShowTaskCase(task_queries)
+
+
 def create_async_container() -> AsyncContainer:
     return make_async_container(
         DatabaseConfigProvider(),
@@ -350,6 +375,7 @@ def create_async_container() -> AsyncContainer:
         UserAuditCasesProvider(),
         AuthUseCasesProvider(),
         UserUseCasesProvider(),
+        TaskUseCasesProvider(),
     )
 
 
