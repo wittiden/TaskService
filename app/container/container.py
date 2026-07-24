@@ -165,7 +165,7 @@ class UnitOfWorkProvider(Provider):
 class TaskConfigProvider(Provider):
     """Провайдер по создании конфигурации задач"""
 
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=Scope.APP)
     def task_config(self) -> TaskConfig:
         return TaskConfig()
 
@@ -382,6 +382,7 @@ def create_async_container() -> AsyncContainer:
         RedisClientProvider(),
         TokenConfigProvider(),
         UnitOfWorkProvider(),
+        TaskConfigProvider(),
         RedisRepositoriesProvider(),
         CommandsRepositoryProvider(),
         QueriesRepositoryProvider(),

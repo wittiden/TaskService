@@ -1,15 +1,15 @@
 from uuid import UUID
 
-from config import TaskConfig
-from contracts.dtos import FullTaskInfoDTO, SecurityTaskInfoDTO
-from exceptions import TaskInvalidDataError, TaskLimitError
-from repository.commands import TaskCommandsRepository
-from repository.queries import TaskQueriesRepository
-from service.guards import TaskGuards
 from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.task import TaskImportantLevelEnum, TaskScheduleEnum
 from app.common.enums.user import UserRoleEnum
+from app.modules.tasks.config import TaskConfig
+from app.modules.tasks.contracts.dtos import FullTaskInfoDTO, SecurityTaskInfoDTO
+from app.modules.tasks.exceptions import TaskInvalidDataError, TaskLimitError
+from app.modules.tasks.repository.commands import TaskCommandsRepository
+from app.modules.tasks.repository.queries import TaskQueriesRepository
+from app.modules.tasks.service.guards import TaskGuards
 from app.modules.users.contracts.dtos import FullUserInfoDTO
 
 

@@ -1,6 +1,5 @@
-from exceptions import TaskInvalidDataError, TaskNotFoundError
-
 from app.infrastructure.database.model import TaskModel
+from app.modules.tasks.exceptions import TaskInvalidDataError, TaskNotFoundError
 
 
 class TaskGuards:
