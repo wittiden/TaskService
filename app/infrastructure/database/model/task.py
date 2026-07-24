@@ -44,9 +44,13 @@ class TaskModel(Base):
         Enum(TaskImportantLevelEnum, name='task_important_level_enum'),
         nullable=False,
         index=True,
+        default=TaskImportantLevelEnum.TRIVIAL,
     )
     schedule_type: Mapped[TaskScheduleEnum] = mapped_column(
-        Enum(TaskScheduleEnum, name='task_schedule_enum'), nullable=False, index=True
+        Enum(TaskScheduleEnum, name='task_schedule_enum'),
+        nullable=False,
+        index=True,
+        default=TaskScheduleEnum.DAILY,
     )
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     description: Mapped[str | None] = mapped_column(String, nullable=True)
