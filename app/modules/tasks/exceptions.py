@@ -19,3 +19,13 @@ class TaskNotFoundError(TaskRouterError):
 class TaskLimitError(TaskRouterError):
     title = 'Task limit error'
     status_code = 409
+
+
+class ClosedTaskError(TaskRouterError):
+    title = 'Closed task error'
+    status_code = 409
+
+
+class CompletedTaskError(TaskRouterError):
+    title = 'Completed task error'
+    status_code = 409

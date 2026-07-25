@@ -65,9 +65,69 @@ class CreateTaskCase:
 class UpdateTaskCase:
     """Кейс по обновлению данных задач"""
 
+    def __init__(
+        self, task_commands: TaskCommandsRepository, task_queries: TaskQueriesRepository
+    ) -> None:
+        self._task_commands = task_commands
+        self._task_queries = task_queries
+
+    async def update_my_task_params(
+        self, user_id: UUID, task_id: UUID, new_params: dict
+    ) -> FullTaskInfoDTO:
+        columns = await self._task_queries.select_user_task_close_complete_params(user_id, task_id)
+        columns = TaskGuards.require_task_columns_exist(columns)
+
+        TaskGuards.require_task_not_closed(columns)
+        TaskGuards.require_task_not_completed(columns)
+
+        result = await self._task_commands.alter_user_task_params(user_id, task_id, new_params)
+        result = TaskGuards.require_task_exist(result)
+
+        return FullTaskInfoDTO.model_validate(result)
+
 
 class DeleteTaskCase:
     """Кейс по удалению задач"""
+
+    def __init__(self, task_commands: TaskCommandsRepository) -> None:
+        self._task_commands = task_commands
+
+    async def delete_task_by_id(self, task_id: UUID) -> None:
+        result = await self._task_commands.delete_task_by_id(task_id)
+        TaskGuards.require_deleted_task_exist(result)
+
+    async def delete_user_tasks(self, user_id: UUID) -> None:
+        result = await self._task_commands.delete_user_tasks(user_id)
+        TaskGuards.require_deleted_tasks_exist(result)
+
+    async def delete_close_complete_user_tasks(self, user_id: UUID) -> None:
+        result = await self._task_commands.delete_close_complete_user_tasks(user_id)
+        TaskGuards.require_deleted_tasks_exist(result)
+
+    async def delete_close_user_tasks(self, user_id: UUID) -> None:
+        result = await self._task_commands.delete_close_user_tasks(user_id)
+        TaskGuards.require_deleted_tasks_exist(result)
+
+    async def delete_complete_user_tasks(self, user_id: UUID) -> None:
+        result = await self._task_commands.delete_complete_user_tasks(user_id)
+        TaskGuards.require_deleted_tasks_exist(result)
+
+
+class ManageTaskCase:
+    """Класс по менедженгу задач"""
+
+    def __init__(self, task_commands: TaskCommandsRepository) -> None:
+        self._task_commands = task_commands
+
+    async def close_my_task(self, user_id: UUID, task_id: UUID) -> FullTaskInfoDTO:
+        result = await self._task_commands.alter_close_user_task(user_id, task_id)
+        TaskGuards.require_task_with_spec_params_exist(result)
+        return FullTaskInfoDTO.model_validate(result)
+
+    async def complete_my_task(self, user_id: UUID, task_id: UUID) -> FullTaskInfoDTO:
+        result = await self._task_commands.alter_close_user_task(user_id, task_id)
+        TaskGuards.require_task_with_spec_params_exist(result)
+        return FullTaskInfoDTO.model_validate(result)
 
 
 class ShowTaskCase:

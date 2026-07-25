@@ -37,7 +37,13 @@ from app.modules.sessions.service.use_cases import (
 from app.modules.tasks.config import TaskConfig
 from app.modules.tasks.repository.commands import TaskCommandsRepository
 from app.modules.tasks.repository.queries import TaskQueriesRepository
-from app.modules.tasks.service.use_cases import CreateTaskCase, ShowTaskCase
+from app.modules.tasks.service.use_cases import (
+    CreateTaskCase,
+    DeleteTaskCase,
+    ManageTaskCase,
+    ShowTaskCase,
+    UpdateTaskCase,
+)
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
 from app.modules.users.service.use_cases import (
@@ -370,6 +376,20 @@ class TaskUseCasesProvider(Provider):
     @provide
     def show_task_case(self, task_queries: TaskQueriesRepository) -> ShowTaskCase:
         return ShowTaskCase(task_queries)
+
+    @provide
+    def delete_task_case(self, task_commands: TaskCommandsRepository) -> DeleteTaskCase:
+        return DeleteTaskCase(task_commands)
+
+    @provide
+    def manage_task_case(self, task_commands: TaskCommandsRepository) -> ManageTaskCase:
+        return ManageTaskCase(task_commands)
+
+    @provide
+    def update_task_case(
+        self, task_commands: TaskCommandsRepository, task_queries: TaskQueriesRepository
+    ) -> UpdateTaskCase:
+        return UpdateTaskCase(task_commands, task_queries)
 
 
 def create_async_container() -> AsyncContainer:
