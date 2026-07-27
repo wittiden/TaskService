@@ -40,9 +40,11 @@ class TaskCommandsRepository:
         except IntegrityError:
             raise
 
-    async def delete_task_by_id(self, task_id: UUID) -> TaskModel | None:
+    async def delete_user_task_by_id(self, task_id: UUID, user_id: UUID) -> TaskModel | None:
         result = await self._async_session.execute(
-            delete(TaskModel).where(TaskModel.task_id == task_id).returning(TaskModel)
+            delete(TaskModel)
+            .where(TaskModel.task_id == task_id, TaskModel.user_id == user_id)
+            .returning(TaskModel)
         )
 
         return result.scalar_one_or_none()

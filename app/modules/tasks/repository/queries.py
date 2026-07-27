@@ -12,9 +12,11 @@ class TaskQueriesRepository:
     def __init__(self, async_session: AsyncSession) -> None:
         self._async_session = async_session
 
-    async def select_task_by_id(self, task_id: UUID) -> TaskModel | None:
-        task = await self._async_session.get(TaskModel, task_id)
-        return task
+    async def select_user_task_by_id(self, task_id: UUID, user_id: UUID) -> TaskModel | None:
+        task = await self._async_session.execute(
+            select(TaskModel).where(TaskModel.task_id == task_id, TaskModel.user_id == user_id)
+        )
+        return task.scalar_one_or_none()
 
     async def select_tasks_by_user_id(
         self, user_id: UUID, offset: int = 0, limit: int = 100
@@ -22,10 +24,6 @@ class TaskQueriesRepository:
         tasks = await self._async_session.execute(
             select(TaskModel).where(TaskModel.user_id == user_id).offset(offset).limit(limit)
         )
-        return list(tasks.scalars().all())
-
-    async def select_tasks(self, offset: int = 0, limit: int = 100) -> list[TaskModel]:
-        tasks = await self._async_session.execute(select(TaskModel).offset(offset).limit(limit))
         return list(tasks.scalars().all())
 
     async def select_user_completed_tasks(

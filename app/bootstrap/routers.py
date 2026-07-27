@@ -4,6 +4,7 @@ from app.infrastructure.http.healthcheck.api.v1.endpoints import health_router
 from app.modules.audits.api.v1.endpoints import admin_user_audits_router
 from app.modules.auth.api.v1.endpoints import auth_router
 from app.modules.sessions.api.v1.endpoints import admin_tokens_router
+from app.modules.tasks.api.v1.endpoints import tasks_router
 from app.modules.users.api.v1.endpoints import admin_users_router, users_router
 
 ROUTER_LIST = [
@@ -11,6 +12,7 @@ ROUTER_LIST = [
     auth_router,
     users_router,
     admin_users_router,
+    tasks_router,
     admin_user_audits_router,
     admin_tokens_router,
 ]

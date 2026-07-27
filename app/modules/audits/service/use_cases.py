@@ -31,6 +31,10 @@ class CreateUserAuditCase:
             raise UserAuditModelIntegrityError(str(exc)) from exc
 
 
+class CreateTaskAuditCase:
+    """Кейс по созданию аудита задач"""
+
+
 class ShowUserAuditCase:
     """Кейс по показу информации аудита пользователя"""
 

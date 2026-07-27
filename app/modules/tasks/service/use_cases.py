@@ -92,8 +92,8 @@ class DeleteTaskCase:
     def __init__(self, task_commands: TaskCommandsRepository) -> None:
         self._task_commands = task_commands
 
-    async def delete_task_by_id(self, task_id: UUID) -> None:
-        result = await self._task_commands.delete_task_by_id(task_id)
+    async def delete_user_task_by_id(self, task_id: UUID, user_id: UUID) -> None:
+        result = await self._task_commands.delete_user_task_by_id(task_id, user_id)
         TaskGuards.require_deleted_task_exist(result)
 
     async def delete_user_tasks(self, user_id: UUID) -> None:
@@ -136,16 +136,12 @@ class ShowTaskCase:
     def __init__(self, task_queries: TaskQueriesRepository) -> None:
         self._task_queries = task_queries
 
-    async def show_tasks(self, offset: int = 0, limit: int = 100) -> list[FullTaskInfoDTO]:
-        tasks = await self._task_queries.select_tasks(offset, limit)
-        return [FullTaskInfoDTO.model_validate(task) for task in tasks]
-
-    async def show_task_by_id(self, task_id: UUID) -> FullTaskInfoDTO:
-        task = await self._task_queries.select_task_by_id(task_id)
+    async def show_user_task_by_id(self, task_id: UUID, user_id: UUID) -> FullTaskInfoDTO:
+        task = await self._task_queries.select_user_task_by_id(task_id, user_id)
         task = TaskGuards.require_task_exist(task)
         return FullTaskInfoDTO.model_validate(task)
 
-    async def show_tasks_by_user_id(
+    async def show_user_tasks(
         self, user_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[SecurityTaskInfoDTO]:
         tasks = await self._task_queries.select_tasks_by_user_id(user_id, offset, limit)
