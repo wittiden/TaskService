@@ -7,7 +7,7 @@ from app.infrastructure.redis.repositories.current_user.commands import (
 )
 from app.modules.audits.repository.commands import UserAuditCommandsRepository
 from app.modules.audits.repository.queries import UserAuditQueriesRepository
-from app.modules.audits.service.use_cases import CreateUserAuditCase, ShowUserAuditCase
+from app.modules.audits.service.use_cases import CreateTaskAuditCase, CreateUserAuditCase
 from app.modules.auth.jwt_config import TokenConfig
 from app.modules.auth.repository.commands import AuthCommandsRepository
 from app.modules.auth.repository.queries import AuthQueriesRepository
@@ -22,7 +22,15 @@ from app.modules.sessions.repository.commands import SessionCommandsRepository
 from app.modules.sessions.repository.queries import SessionQueriesRepository
 from app.modules.sessions.service.use_cases import (
     DeleteRefreshTokenCase,
-    ShowRefreshTokenCase,
+)
+from app.modules.tasks.config import TaskConfig
+from app.modules.tasks.repository.commands import TaskCommandsRepository
+from app.modules.tasks.repository.queries import TaskQueriesRepository
+from app.modules.tasks.service.use_cases import (
+    CreateTaskCase,
+    DeleteTaskCase,
+    ManageTaskCase,
+    UpdateTaskCase,
 )
 from app.modules.users.repository.commands import UserCommandsRepository
 from app.modules.users.repository.queries import UserQueriesRepository
@@ -30,7 +38,6 @@ from app.modules.users.service.use_cases import (
     CreateUserCase,
     DeleteUserCase,
     ManageUserCase,
-    ShowUserCase,
     UpdateUserCase,
 )
 
@@ -93,16 +100,6 @@ def create_user_audit_mock_case(mock_user_audit_commands) -> CreateUserAuditCase
 @pytest.fixture()
 def mock_create_user_audit_case() -> AsyncMock:
     return AsyncMock(spec=CreateUserAuditCase)
-
-
-@pytest.fixture()
-def show_user_audit_mock_case(mock_user_audit_queries) -> ShowUserAuditCase:
-    return ShowUserAuditCase(mock_user_audit_queries)
-
-
-@pytest.fixture()
-def show_refresh_token_mock_case(mock_session_queries) -> ShowRefreshTokenCase:
-    return ShowRefreshTokenCase(mock_session_queries)
 
 
 @pytest.fixture()
@@ -202,5 +199,44 @@ def manage_user_mock_case(
 
 
 @pytest.fixture()
-def show_user_mock_case(mock_user_queries) -> ShowUserCase:
-    return ShowUserCase(mock_user_queries)
+def mock_task_commands_repo() -> AsyncMock:
+    return AsyncMock(spec=TaskCommandsRepository)
+
+
+@pytest.fixture()
+def mock_task_queries_repo() -> AsyncMock:
+    return AsyncMock(spec=TaskQueriesRepository)
+
+
+@pytest.fixture()
+def mock_task_config() -> Mock:
+    return Mock(spec=TaskConfig)
+
+
+@pytest.fixture()
+def create_task_mock_case(mock_task_commands_repo, mock_task_config, mock_task_queries_repo):
+    return CreateTaskCase(mock_task_commands_repo, mock_task_config, mock_task_queries_repo)
+
+
+@pytest.fixture()
+def mock_create_tack_audit_case() -> AsyncMock:
+    return AsyncMock(spec=CreateTaskAuditCase)
+
+
+@pytest.fixture()
+def update_task_mock_case(
+    mock_task_queries_repo, mock_task_commands_repo, mock_create_tack_audit_case
+) -> UpdateTaskCase:
+    return UpdateTaskCase(
+        mock_task_commands_repo, mock_task_queries_repo, mock_create_tack_audit_case
+    )
+
+
+@pytest.fixture()
+def manage_task_mock_case(mock_task_commands_repo, mock_create_tack_audit_case) -> ManageTaskCase:
+    return ManageTaskCase(mock_task_commands_repo, mock_create_tack_audit_case)
+
+
+@pytest.fixture()
+def delete_task_mock_case(mock_task_commands_repo) -> DeleteTaskCase:
+    return DeleteTaskCase(mock_task_commands_repo)

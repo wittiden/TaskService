@@ -3,20 +3,20 @@ from uuid import uuid4
 
 from factory import Factory, LazyFunction, SelfAttribute, SubFactory
 
-from app.infrastructure.database.model import UserAuditModel
-from tests.factories.user import UsersFactory
+from app.infrastructure.database.model import TaskAuditModel
+from tests.factories.task import TasksFactory
 
 
-class UserAuditsFactory(Factory):
+class TaskAuditsFactory(Factory):
     """Фабрика по созданию аудитов пользователей"""
 
     class Meta:
-        model = UserAuditModel
+        model = TaskAuditModel
 
-    user = SubFactory(UsersFactory)
+    task = SubFactory(TasksFactory)
 
-    user_audit_id = LazyFunction(uuid4)
-    user_id = SelfAttribute('user.user_id')
+    task_audit_id = LazyFunction(uuid4)
+    task_id = SelfAttribute('task.task_id')
     field_name = 'field_name'
     new_value = 'new_value'
     old_value = 'old_value'
