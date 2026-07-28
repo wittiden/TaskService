@@ -341,7 +341,7 @@ class TestManageTaskCase:
     @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_close_my_task_bad(self, mock_task_commands_repo, manage_task_mock_case):
-        task = TasksFactory(close=True)
+        task = TasksFactory.build(close=True)
 
         mock_task_commands_repo.alter_close_user_task.return_value = None
 

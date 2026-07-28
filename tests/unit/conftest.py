@@ -5,7 +5,10 @@ import pytest
 from app.infrastructure.redis.repositories.current_user.commands import (
     CurrentUserRedisCommandsRepository,
 )
-from app.modules.audits.repository.commands import UserAuditCommandsRepository
+from app.modules.audits.repository.commands import (
+    TaskAuditCommandsRepository,
+    UserAuditCommandsRepository,
+)
 from app.modules.audits.repository.queries import UserAuditQueriesRepository
 from app.modules.audits.service.use_cases import CreateTaskAuditCase, CreateUserAuditCase
 from app.modules.auth.jwt_config import TokenConfig
@@ -240,3 +243,13 @@ def manage_task_mock_case(mock_task_commands_repo, mock_create_tack_audit_case) 
 @pytest.fixture()
 def delete_task_mock_case(mock_task_commands_repo) -> DeleteTaskCase:
     return DeleteTaskCase(mock_task_commands_repo)
+
+
+@pytest.fixture()
+def mock_task_audit_commands_repo() -> AsyncMock:
+    return AsyncMock(spec=TaskAuditCommandsRepository)
+
+
+@pytest.fixture()
+def create_task_audit_mock_case(mock_task_audit_commands_repo) -> CreateTaskAuditCase:
+    return CreateTaskAuditCase(mock_task_audit_commands_repo)
