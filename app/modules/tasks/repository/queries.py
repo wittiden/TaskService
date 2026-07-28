@@ -78,7 +78,7 @@ class TaskQueriesRepository:
                 TaskModel.title,
                 TaskModel.description,
                 TaskModel.schedule_type,
-                TaskModel.schedule_type,
+                TaskModel.important_level,
             ).where(TaskModel.task_id == task_id, TaskModel.user_id == user_id)
         )
 
