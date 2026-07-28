@@ -1,21 +1,39 @@
 from fastapi import FastAPI
 
 from app.infrastructure.http.healthcheck.api.v1.endpoints import health_router
-from app.modules.audits.api.v1.endpoints import admin_task_audits_router, admin_user_audits_router
-from app.modules.auth.api.v1.endpoints import auth_router
-from app.modules.sessions.api.v1.endpoints import admin_tokens_router
-from app.modules.tasks.api.v1.endpoints import tasks_router
-from app.modules.users.api.v1.endpoints import admin_users_router, users_router
+from app.modules.audits.api.v1.routers.read import (
+    read_admin_task_audits_router,
+    read_admin_user_audits_router,
+)
+from app.modules.auth.api.v1.routers.manage import auth_router
+from app.modules.sessions.api.v1.routers.delete import delete_admin_sessions_router
+from app.modules.sessions.api.v1.routers.read import read_admin_sessions_router
+from app.modules.tasks.api.v1.routers.create import create_tasks_router
+from app.modules.tasks.api.v1.routers.delete import delete_tasks_router
+from app.modules.tasks.api.v1.routers.read import read_tasks_router
+from app.modules.tasks.api.v1.routers.update import update_tasks_router
+from app.modules.users.api.v1.routers.create import create_users_router
+from app.modules.users.api.v1.routers.delete import delete_admin_users_router
+from app.modules.users.api.v1.routers.read import read_admin_users_router, read_users_router
+from app.modules.users.api.v1.routers.update import update_admin_users_router, update_users_router
 
 ROUTER_LIST = [
     health_router,
     auth_router,
-    users_router,
-    admin_users_router,
-    tasks_router,
-    admin_task_audits_router,
-    admin_user_audits_router,
-    admin_tokens_router,
+    create_users_router,
+    update_users_router,
+    update_admin_users_router,
+    delete_admin_users_router,
+    read_users_router,
+    read_admin_users_router,
+    read_admin_user_audits_router,
+    create_tasks_router,
+    update_tasks_router,
+    delete_tasks_router,
+    read_tasks_router,
+    read_admin_task_audits_router,
+    delete_admin_sessions_router,
+    read_admin_sessions_router,
 ]
 
 

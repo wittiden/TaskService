@@ -143,7 +143,7 @@ class ManageTaskCase:
         return FullTaskInfoDTO.model_validate(result)
 
     async def complete_my_task(self, user_id: UUID, task_id: UUID) -> FullTaskInfoDTO:
-        result = await self._task_commands.alter_close_user_task(user_id, task_id)
+        result = await self._task_commands.alter_complete_user_task(user_id, task_id)
         result = TaskGuards.require_task_with_spec_params_exist(result)
 
         await self._create_task_audit_case.create_task_audit(

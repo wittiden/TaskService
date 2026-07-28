@@ -6,8 +6,8 @@ from app.modules.users.contracts.dtos import SecurityUserInfoDTO
 from tests.factories.user import UsersFactory
 
 
-class TestAuthAPI:
-    """Тестирование апи аутентификации"""
+class TestManageAuthRouters:
+    """Тестирование роутеров менедженга аутентификации"""
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -39,14 +39,18 @@ class TestAuthAPI:
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_logout_user_device_endpoint_good(self, current_standard):
-        response = await current_standard.post(url='/api/v1/auth/logout')
+        client, _ = current_standard
+
+        response = await client.post(url='/api/v1/auth/logout')
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_logout_all_user_device_endpoint_good(self, current_standard):
-        response = await current_standard.post(url='/api/v1/auth/logout-all')
+        client, _ = current_standard
+
+        response = await client.post(url='/api/v1/auth/logout-all')
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
 

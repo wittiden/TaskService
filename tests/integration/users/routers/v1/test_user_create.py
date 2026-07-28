@@ -1,0 +1,41 @@
+import pytest
+from fastapi import status
+
+from app.modules.users.contracts.dtos import SecurityUserInfoDTO
+from tests.factories.user import UsersFactory
+
+
+class TestCreateUserRouters:
+    """Тестирование роутеров создания пользователей"""
+
+    @pytest.mark.parametrize(
+        'url, is_admin, is_vip',
+        [
+            ('/api/v1/users/standard', False, False),
+            ('/api/v1/users/admin', True, False),
+            ('/api/v1/users/vip', False, True),
+        ],
+        ids=[
+            'standard',
+            'admin',
+            'vip',
+        ],
+    )
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_create_user_endpoint_good(self, client, url, is_admin, is_vip):
+        user = UsersFactory(admin=is_admin, vip=is_vip)
+        request_data = {
+            'name': user.name,
+            'email': user.email,
+            'password': user.password_hash,
+        }
+
+        response = await client.post(url=url, json=request_data)
+        response_data = response.json()
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response_data.keys() == SecurityUserInfoDTO.model_fields.keys()
+        assert response_data['name'] == request_data['name']
+        assert response_data['email'] == request_data['email']
+        assert 'password' not in response_data

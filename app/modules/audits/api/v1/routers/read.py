@@ -11,11 +11,15 @@ from app.infrastructure.unit_of_work.uow import UnitOfWork
 from app.modules.audits.contracts.dtos import FullTaskAuditInfoDTO, FullUserAuditInfoDTO
 from app.modules.audits.service.use_cases import ShowTaskAuditCase, ShowUserAuditCase
 
-admin_user_audits_router = APIRouter(prefix='/api/v1/admin/user-audits', tags=['admin-user-audits'])
-admin_task_audits_router = APIRouter(prefix='/api/v1/admin/task-audits', tags=['admin-task-audits'])
+read_admin_user_audits_router = APIRouter(
+    prefix='/api/v1/admin/user-audits', tags=['admin-user-audits']
+)
+read_admin_task_audits_router = APIRouter(
+    prefix='/api/v1/admin/task-audits', tags=['admin-task-audits']
+)
 
 
-@admin_user_audits_router.get(
+@read_admin_user_audits_router.get(
     '/', response_model=list[FullUserAuditInfoDTO], summary='Show user audits'
 )
 @limiter.limit('30/minute')
@@ -32,7 +36,22 @@ async def show_user_audits_endpoint(
     return await case.show_user_audits(offset, limit)
 
 
-@admin_user_audits_router.get(
+@read_admin_user_audits_router.get(
+    '/by-id/{user_audit_id}',
+    response_model=FullUserAuditInfoDTO,
+    summary='Show user audits by id',
+)
+@inject
+async def show_user_audits_by_id_endpoint(
+    current_user: CurrentAdmin,
+    user_audit_id: UUID,
+    case: FromDishka[ShowUserAuditCase],
+    uow: FromDishka[UnitOfWork],
+) -> FullUserAuditInfoDTO:
+    return await case.show_user_audit_by_id(user_audit_id)
+
+
+@read_admin_user_audits_router.get(
     '/{user_id}',
     response_model=list[FullUserAuditInfoDTO],
     summary='Show user audits by user id',
@@ -49,22 +68,7 @@ async def show_user_audits_by_user_id_endpoint(
     return await case.show_user_audits_by_user_id(user_id, offset, limit)
 
 
-@admin_user_audits_router.get(
-    '/by-id/{user_audit_id}',
-    response_model=FullUserAuditInfoDTO,
-    summary='Show user audits by id',
-)
-@inject
-async def show_user_audits_by_id_endpoint(
-    current_user: CurrentAdmin,
-    user_audit_id: UUID,
-    case: FromDishka[ShowUserAuditCase],
-    uow: FromDishka[UnitOfWork],
-) -> FullUserAuditInfoDTO:
-    return await case.show_user_audit_by_id(user_audit_id)
-
-
-@admin_task_audits_router.get(
+@read_admin_task_audits_router.get(
     '/', response_model=list[FullTaskAuditInfoDTO], summary='Show task audits'
 )
 @inject
@@ -78,20 +82,7 @@ async def show_task_audits_endpoint(
     return await case.show_task_audits(offset, limit)
 
 
-@admin_task_audits_router.get(
-    '/{task_audit_id}', response_model=FullTaskAuditInfoDTO, summary='Show task audit by id'
-)
-@inject
-async def show_task_audit_by_id_endpoint(
-    current_user: CurrentAdmin,
-    task_audit_id: UUID,
-    case: FromDishka[ShowTaskAuditCase],
-    uow: FromDishka[UnitOfWork],
-) -> FullTaskAuditInfoDTO:
-    return await case.show_task_audit_by_id(task_audit_id)
-
-
-@admin_task_audits_router.get(
+@read_admin_task_audits_router.get(
     '/by-task-id/{task_id}',
     response_model=list[FullTaskAuditInfoDTO],
     summary='Show task audits by task id',
@@ -106,3 +97,16 @@ async def show_task_audits_by_task_id_endpoint(
     limit: int = 100,
 ) -> list[FullTaskAuditInfoDTO]:
     return await case.show_task_audits_by_task_id(task_id, offset, limit)
+
+
+@read_admin_task_audits_router.get(
+    '/{task_audit_id}', response_model=FullTaskAuditInfoDTO, summary='Show task audit by id'
+)
+@inject
+async def show_task_audit_by_id_endpoint(
+    current_user: CurrentAdmin,
+    task_audit_id: UUID,
+    case: FromDishka[ShowTaskAuditCase],
+    uow: FromDishka[UnitOfWork],
+) -> FullTaskAuditInfoDTO:
+    return await case.show_task_audit_by_id(task_audit_id)

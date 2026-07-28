@@ -80,7 +80,7 @@ async def client(
         yield client
 
 
-async def _current(client, url, is_admin=False, is_vip=False) -> AsyncClient:
+async def _current(client, url, is_admin=False, is_vip=False) -> tuple[AsyncClient, str]:
     user = UsersFactory(admin=is_admin, vip=is_vip)
     request_data = {
         'name': user.name,
@@ -89,6 +89,7 @@ async def _current(client, url, is_admin=False, is_vip=False) -> AsyncClient:
     }
 
     response = await client.post(url=url, json=request_data)
+    response_data = response.json()
     assert response.status_code == status.HTTP_201_CREATED
 
     login_request_data = {
@@ -107,19 +108,19 @@ async def _current(client, url, is_admin=False, is_vip=False) -> AsyncClient:
         'Content-Type': 'application/json',
     }
 
-    return client
+    return client, response_data['user_id']
 
 
 @pytest.fixture
-async def current_standard(client) -> AsyncClient:
+async def current_standard(client) -> tuple[AsyncClient, str]:
     return await _current(client, '/api/v1/users/standard')
 
 
 @pytest.fixture
-async def current_admin(client) -> AsyncClient:
+async def current_admin(client) -> tuple[AsyncClient, str]:
     return await _current(client, '/api/v1/users/admin', is_admin=True)
 
 
 @pytest.fixture
-async def current_vip(client) -> AsyncClient:
+async def current_vip(client) -> tuple[AsyncClient, str]:
     return await _current(client, '/api/v1/users/vip', is_vip=True)

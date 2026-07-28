@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import delete, update
+from sqlalchemy import delete, or_, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -61,8 +61,10 @@ class TaskCommandsRepository:
             delete(TaskModel)
             .where(
                 TaskModel.user_id == user_id,
-                TaskModel.closed_at.is_not(None),
-                TaskModel.completed_at.is_not(None),
+                or_(
+                    TaskModel.closed_at.is_not(None),
+                    TaskModel.completed_at.is_not(None),
+                ),
             )
             .returning(TaskModel)
         )

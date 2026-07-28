@@ -328,12 +328,12 @@ class TestManageTaskCase:
     ):
         task = TasksFactory.build(complete=True)
 
-        mock_task_commands_repo.alter_close_user_task.return_value = task
+        mock_task_commands_repo.alter_complete_user_task.return_value = task
 
         result = await manage_task_mock_case.complete_my_task(task.user_id, task.task_id)
 
         assert isinstance(result, FullTaskInfoDTO)
-        mock_task_commands_repo.alter_close_user_task.assert_awaited_once_with(
+        mock_task_commands_repo.alter_complete_user_task.assert_awaited_once_with(
             task.user_id, task.task_id
         )
         assert mock_create_tack_audit_case.create_task_audit.await_count == 1
