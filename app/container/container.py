@@ -15,9 +15,20 @@ from app.infrastructure.redis.repositories.current_user.commands import (
     CurrentUserRedisCommandsRepository,
 )
 from app.infrastructure.unit_of_work.uow import UnitOfWork
-from app.modules.audits.repository.commands import UserAuditCommandsRepository
-from app.modules.audits.repository.queries import UserAuditQueriesRepository
-from app.modules.audits.service.use_cases import CreateUserAuditCase, ShowUserAuditCase
+from app.modules.audits.repository.commands import (
+    TaskAuditCommandsRepository,
+    UserAuditCommandsRepository,
+)
+from app.modules.audits.repository.queries import (
+    TaskAuditQueriesRepository,
+    UserAuditQueriesRepository,
+)
+from app.modules.audits.service.use_cases import (
+    CreateTaskAuditCase,
+    CreateUserAuditCase,
+    ShowTaskAuditCase,
+    ShowUserAuditCase,
+)
 from app.modules.auth.jwt_config import TokenConfig
 from app.modules.auth.repository.commands import AuthCommandsRepository
 from app.modules.auth.repository.queries import AuthQueriesRepository
@@ -201,6 +212,10 @@ class CommandsRepositoryProvider(Provider):
     def task_commands_repo(self, async_session: AsyncSession) -> TaskCommandsRepository:
         return TaskCommandsRepository(async_session)
 
+    @provide
+    def task_audit_commands_repo(self, async_session: AsyncSession) -> TaskAuditCommandsRepository:
+        return TaskAuditCommandsRepository(async_session)
+
 
 class QueriesRepositoryProvider(Provider):
     """Провайдер по созданию queries репозиториев"""
@@ -226,6 +241,10 @@ class QueriesRepositoryProvider(Provider):
     @provide
     def task_queries_repo(self, async_session: AsyncSession) -> TaskQueriesRepository:
         return TaskQueriesRepository(async_session)
+
+    @provide
+    def task_audit_queries_repo(self, async_session: AsyncSession) -> TaskAuditQueriesRepository:
+        return TaskAuditQueriesRepository(async_session)
 
 
 class SessionCasesProvider(Provider):
@@ -262,6 +281,24 @@ class UserAuditCasesProvider(Provider):
         self, user_audit_queries: UserAuditQueriesRepository
     ) -> ShowUserAuditCase:
         return ShowUserAuditCase(user_audit_queries)
+
+
+class TaskAuditCasesProvider(Provider):
+    """Провайдер по созданию кейсов по аудиту задач"""
+
+    scope = Scope.REQUEST
+
+    @provide
+    def create_task_audit_case(
+        self, task_audit_commands: TaskAuditCommandsRepository
+    ) -> CreateTaskAuditCase:
+        return CreateTaskAuditCase(task_audit_commands)
+
+    @provide
+    def show_task_audit_case(
+        self, task_audit_queries: TaskAuditQueriesRepository
+    ) -> ShowTaskAuditCase:
+        return ShowTaskAuditCase(task_audit_queries)
 
 
 class AuthUseCasesProvider(Provider):
@@ -382,14 +419,19 @@ class TaskUseCasesProvider(Provider):
         return DeleteTaskCase(task_commands)
 
     @provide
-    def manage_task_case(self, task_commands: TaskCommandsRepository) -> ManageTaskCase:
-        return ManageTaskCase(task_commands)
+    def manage_task_case(
+        self, task_commands: TaskCommandsRepository, create_task_audit_case: CreateTaskAuditCase
+    ) -> ManageTaskCase:
+        return ManageTaskCase(task_commands, create_task_audit_case)
 
     @provide
     def update_task_case(
-        self, task_commands: TaskCommandsRepository, task_queries: TaskQueriesRepository
+        self,
+        task_commands: TaskCommandsRepository,
+        task_queries: TaskQueriesRepository,
+        create_task_audit_case: CreateTaskAuditCase,
     ) -> UpdateTaskCase:
-        return UpdateTaskCase(task_commands, task_queries)
+        return UpdateTaskCase(task_commands, task_queries, create_task_audit_case)
 
 
 def create_async_container() -> AsyncContainer:
@@ -408,6 +450,7 @@ def create_async_container() -> AsyncContainer:
         QueriesRepositoryProvider(),
         SessionCasesProvider(),
         UserAuditCasesProvider(),
+        TaskAuditCasesProvider(),
         AuthUseCasesProvider(),
         UserUseCasesProvider(),
         TaskUseCasesProvider(),

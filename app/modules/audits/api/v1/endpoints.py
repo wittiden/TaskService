@@ -8,10 +8,11 @@ from starlette.responses import Response
 from app.common.limiter.config import limiter
 from app.common.security.jwt_current import CurrentAdmin
 from app.infrastructure.unit_of_work.uow import UnitOfWork
-from app.modules.audits.contracts.dtos import FullUserAuditInfoDTO
-from app.modules.audits.service.use_cases import ShowUserAuditCase
+from app.modules.audits.contracts.dtos import FullTaskAuditInfoDTO, FullUserAuditInfoDTO
+from app.modules.audits.service.use_cases import ShowTaskAuditCase, ShowUserAuditCase
 
 admin_user_audits_router = APIRouter(prefix='/api/v1/admin/user-audits', tags=['admin-user-audits'])
+admin_task_audits_router = APIRouter(prefix='/api/v1/admin/task-audits', tags=['admin-task-audits'])
 
 
 @admin_user_audits_router.get(
@@ -61,3 +62,47 @@ async def show_user_audits_by_id_endpoint(
     uow: FromDishka[UnitOfWork],
 ) -> FullUserAuditInfoDTO:
     return await case.show_user_audit_by_id(user_audit_id)
+
+
+@admin_task_audits_router.get(
+    '/', response_model=list[FullTaskAuditInfoDTO], summary='Show task audits'
+)
+@inject
+async def show_task_audits_endpoint(
+    current_user: CurrentAdmin,
+    case: FromDishka[ShowTaskAuditCase],
+    uow: FromDishka[UnitOfWork],
+    offset: int = 0,
+    limit: int = 100,
+) -> list[FullTaskAuditInfoDTO]:
+    return await case.show_task_audits(offset, limit)
+
+
+@admin_task_audits_router.get(
+    '/{task_audit_id}', response_model=FullTaskAuditInfoDTO, summary='Show task audit by id'
+)
+@inject
+async def show_task_audit_by_id_endpoint(
+    current_user: CurrentAdmin,
+    task_audit_id: UUID,
+    case: FromDishka[ShowTaskAuditCase],
+    uow: FromDishka[UnitOfWork],
+) -> FullTaskAuditInfoDTO:
+    return await case.show_task_audit_by_id(task_audit_id)
+
+
+@admin_task_audits_router.get(
+    '/by-task-id/{task_id}',
+    response_model=list[FullTaskAuditInfoDTO],
+    summary='Show task audits by task id',
+)
+@inject
+async def show_task_audits_by_task_id_endpoint(
+    current_user: CurrentAdmin,
+    task_id: UUID,
+    case: FromDishka[ShowTaskAuditCase],
+    uow: FromDishka[UnitOfWork],
+    offset: int = 0,
+    limit: int = 100,
+) -> list[FullTaskAuditInfoDTO]:
+    return await case.show_task_audits_by_task_id(task_id, offset, limit)

@@ -35,9 +35,11 @@ class TaskGuards:
             raise TaskNotFoundError('Tasks objs cant found for deletion')
 
     @staticmethod
-    def require_task_with_spec_params_exist(task: TaskModel | None) -> None:
+    def require_task_with_spec_params_exist(task: TaskModel | None) -> TaskModel:
         if task is None:
             raise TaskNotFoundError('Your task with spec params not found')
+
+        return task
 
     @staticmethod
     def require_task_columns_exist(columns: dict | None) -> dict:

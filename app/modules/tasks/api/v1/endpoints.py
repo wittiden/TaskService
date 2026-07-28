@@ -72,7 +72,7 @@ async def delete_user_task_by_id_endpoint(
     case: FromDishka[DeleteTaskCase],
     uow: FromDishka[UnitOfWork],
 ) -> None:
-    return await case.delete_user_task_by_id(task_id, current_user.user_id)
+    await case.delete_user_task_by_id(task_id, current_user.user_id)
 
 
 @tasks_router.delete('/', status_code=status.HTTP_204_NO_CONTENT, summary='Delete user tasks')
@@ -85,7 +85,7 @@ async def delete_user_tasks_endpoint(
     case: FromDishka[DeleteTaskCase],
     uow: FromDishka[UnitOfWork],
 ) -> None:
-    return await case.delete_user_tasks(current_user.user_id)
+    await case.delete_user_tasks(current_user.user_id)
 
 
 @tasks_router.delete(
@@ -102,7 +102,7 @@ async def delete_close_complete_user_tasks_endpoint(
     case: FromDishka[DeleteTaskCase],
     uow: FromDishka[UnitOfWork],
 ) -> None:
-    return await case.delete_close_complete_user_tasks(current_user.user_id)
+    await case.delete_close_complete_user_tasks(current_user.user_id)
 
 
 @tasks_router.delete(
@@ -117,7 +117,7 @@ async def delete_close_user_tasks_endpoint(
     case: FromDishka[DeleteTaskCase],
     uow: FromDishka[UnitOfWork],
 ) -> None:
-    return await case.delete_close_user_tasks(current_user.user_id)
+    await case.delete_close_user_tasks(current_user.user_id)
 
 
 @tasks_router.delete(
@@ -132,7 +132,7 @@ async def delete_complete_user_tasks_endpoint(
     case: FromDishka[DeleteTaskCase],
     uow: FromDishka[UnitOfWork],
 ) -> None:
-    return await case.delete_complete_user_tasks(current_user.user_id)
+    await case.delete_complete_user_tasks(current_user.user_id)
 
 
 @tasks_router.patch('/close/{task_id}', response_model=FullTaskInfoDTO, summary='Close my task')

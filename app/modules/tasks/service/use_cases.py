@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.common.enums.task import TaskImportantLevelEnum, TaskScheduleEnum
 from app.common.enums.user import UserRoleEnum
+from app.modules.audits.service.use_cases import CreateTaskAuditCase
 from app.modules.tasks.config import TaskConfig
 from app.modules.tasks.contracts.dtos import FullTaskInfoDTO, SecurityTaskInfoDTO
 from app.modules.tasks.exceptions import TaskInvalidDataError, TaskLimitError
@@ -66,10 +67,14 @@ class UpdateTaskCase:
     """Кейс по обновлению данных задач"""
 
     def __init__(
-        self, task_commands: TaskCommandsRepository, task_queries: TaskQueriesRepository
+        self,
+        task_commands: TaskCommandsRepository,
+        task_queries: TaskQueriesRepository,
+        create_task_audit_case: CreateTaskAuditCase,
     ) -> None:
         self._task_commands = task_commands
         self._task_queries = task_queries
+        self._create_task_audit_case = create_task_audit_case
 
     async def update_my_task_params(
         self, user_id: UUID, task_id: UUID, new_params: dict
@@ -82,6 +87,12 @@ class UpdateTaskCase:
 
         result = await self._task_commands.alter_user_task_params(user_id, task_id, new_params)
         result = TaskGuards.require_task_exist(result)
+
+        for key, value in new_params.items():
+            old_value = columns.get(key)
+            await self._create_task_audit_case.create_task_audit(
+                task_id, key, new_value=str(value), old_value=str(old_value)
+            )
 
         return FullTaskInfoDTO.model_validate(result)
 
@@ -116,17 +127,28 @@ class DeleteTaskCase:
 class ManageTaskCase:
     """Класс по менедженгу задач"""
 
-    def __init__(self, task_commands: TaskCommandsRepository) -> None:
+    def __init__(
+        self, task_commands: TaskCommandsRepository, create_task_audit_case: CreateTaskAuditCase
+    ) -> None:
         self._task_commands = task_commands
+        self._create_task_audit_case = create_task_audit_case
 
     async def close_my_task(self, user_id: UUID, task_id: UUID) -> FullTaskInfoDTO:
         result = await self._task_commands.alter_close_user_task(user_id, task_id)
-        TaskGuards.require_task_with_spec_params_exist(result)
+        result = TaskGuards.require_task_with_spec_params_exist(result)
+
+        await self._create_task_audit_case.create_task_audit(
+            task_id, 'closed_at', None, new_value=str(result.closed_at)
+        )
         return FullTaskInfoDTO.model_validate(result)
 
     async def complete_my_task(self, user_id: UUID, task_id: UUID) -> FullTaskInfoDTO:
         result = await self._task_commands.alter_close_user_task(user_id, task_id)
-        TaskGuards.require_task_with_spec_params_exist(result)
+        result = TaskGuards.require_task_with_spec_params_exist(result)
+
+        await self._create_task_audit_case.create_task_audit(
+            task_id, 'completed_at', None, new_value=str(result.completed_at)
+        )
         return FullTaskInfoDTO.model_validate(result)
 
 

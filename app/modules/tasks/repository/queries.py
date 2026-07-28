@@ -71,9 +71,15 @@ class TaskQueriesRepository:
         self, user_id: UUID, task_id: UUID
     ) -> dict | None:
         columns = await self._async_session.execute(
-            select(TaskModel.task_id, TaskModel.completed_at, TaskModel.closed_at).where(
-                TaskModel.task_id == task_id, TaskModel.user_id == user_id
-            )
+            select(
+                TaskModel.task_id,
+                TaskModel.completed_at,
+                TaskModel.closed_at,
+                TaskModel.title,
+                TaskModel.description,
+                TaskModel.schedule_type,
+                TaskModel.schedule_type,
+            ).where(TaskModel.task_id == task_id, TaskModel.user_id == user_id)
         )
 
         columns = columns.mappings().one_or_none()

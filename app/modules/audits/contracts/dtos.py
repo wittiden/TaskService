@@ -17,3 +17,18 @@ class FullUserAuditInfoDTO(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+class FullTaskAuditInfoDTO(BaseModel):
+    """DTO для передачи полных данных аудита задач"""
+
+    task_audit_id: UUID
+    task: UUID
+    field_name: str
+    old_value: str | None
+    new_value: str | None
+    changed_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )

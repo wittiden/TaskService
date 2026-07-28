@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.database.model import UserAuditModel
+from app.infrastructure.database.model import TaskAuditModel, UserAuditModel
 
 
 class UserAuditCommandsRepository:
@@ -28,6 +28,31 @@ class UserAuditCommandsRepository:
 
         try:
             self._async_session.add(user_audit)
+            await self._async_session.flush()
+
+        except IntegrityError:
+            await self._async_session.rollback()
+            raise
+
+
+class TaskAuditCommandsRepository:
+    """Репозиторий для insert, alter, delete запросов"""
+
+    def __init__(self, async_session: AsyncSession) -> None:
+        self._async_session = async_session
+
+    async def insert_task_audit_obj(
+        self, task_id: UUID, field_name: str, old_value: str | None, new_value: str | None
+    ) -> None:
+        task_audit = TaskAuditModel(
+            task_id=task_id,
+            field_name=field_name,
+            old_value=old_value,
+            new_value=new_value,
+        )
+
+        try:
+            self._async_session.add(task_audit)
             await self._async_session.flush()
 
         except IntegrityError:
