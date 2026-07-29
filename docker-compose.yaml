@@ -36,7 +36,7 @@ services:
           target: .
           path: /app
         - action: rebuild
-          path: requirements.txt
+          path: requirements-prod.txt
 
   db:
     image: postgres:16-alpine
