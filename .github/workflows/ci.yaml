@@ -110,7 +110,6 @@ jobs:
 
       - name: Generate JWT Keys
         run: |
-          mkdir certs
           cd certs
           openssl genrsa -out access-private.pem 2048
           openssl genrsa -out refresh-private.pem 2048
