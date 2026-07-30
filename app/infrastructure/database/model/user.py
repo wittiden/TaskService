@@ -41,7 +41,7 @@ class UserModel(Base):
     )
     blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    user_audits: Mapped[list[UserAuditModel]] = relationship(
+    user_audits: Mapped[list['UserAuditModel']] = relationship(
         'UserAuditModel',
         back_populates='user',
         uselist=True,
