@@ -108,5 +108,14 @@ jobs:
           python -m pip install -r requirements-dev.txt --no-cache-dir
           python -m pip install -r requirements-prod.txt --no-cache-dir
 
+      - name: Generate JWT Keys
+        run: |
+          mkdir certs
+          cd certs
+          openssl genrsa -out access-private.pem 2048
+          openssl genrsa -out refresh-private.pem 2048
+          openssl rsa -in access-private.pem -pubout -out access-public.pem
+          openssl rsa -in refresh-private.pem -pubout -out refresh-public.pem
+
       - name: Integration Tests
         run: python -m pytest -m integration -n auto
