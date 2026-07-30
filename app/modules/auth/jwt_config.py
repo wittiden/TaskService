@@ -6,18 +6,18 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class TokenConfig(BaseSettings):
     """Класс для конфигурации токенов"""
 
-    ACCESS_TOKEN_ALGORITHM: str
-    ACCESS_TOKEN_PRIVATE_KEY_PATH: Path
-    ACCESS_TOKEN_PUBLIC_KEY_PATH: Path
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
-    ACCESS_TOKEN_AUDIENCE: str
+    ACCESS_TOKEN_ALGORITHM: str = 'RS256'
+    ACCESS_TOKEN_PRIVATE_KEY_PATH: str = 'certs/access-private'
+    ACCESS_TOKEN_PUBLIC_KEY_PATH: str = 'certs/access-public'
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 5
+    ACCESS_TOKEN_AUDIENCE: str = 'access-api'
 
-    REFRESH_TOKEN_ALGORITHM: str
-    REFRESH_TOKEN_PRIVATE_KEY_PATH: Path
-    REFRESH_TOKEN_PUBLIC_KEY_PATH: Path
-    REFRESH_TOKEN_EXPIRE_DAYS: int
-    REFRESH_TOKEN_AUDIENCE: str
-    REFRESH_TOKEN_VERSION: int
+    REFRESH_TOKEN_ALGORITHM: str = 'RS256'
+    REFRESH_TOKEN_PRIVATE_KEY_PATH: str = 'certs/refresh-private'
+    REFRESH_TOKEN_PUBLIC_KEY_PATH: str = 'certs/refresh-public'
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 1
+    REFRESH_TOKEN_AUDIENCE: str = 'refresh-api'
+    REFRESH_TOKEN_VERSION: int = 1
 
     model_config = SettingsConfigDict(
         env_file='.env',
@@ -27,16 +27,16 @@ class TokenConfig(BaseSettings):
 
     @property
     def access_token_private_key(self) -> str:
-        return self.ACCESS_TOKEN_PRIVATE_KEY_PATH.read_text()
+        return Path(self.ACCESS_TOKEN_PRIVATE_KEY_PATH).read_text()
 
     @property
     def access_token_public_key(self) -> str:
-        return self.ACCESS_TOKEN_PUBLIC_KEY_PATH.read_text()
+        return Path(self.ACCESS_TOKEN_PUBLIC_KEY_PATH).read_text()
 
     @property
     def refresh_token_private_key(self) -> str:
-        return self.REFRESH_TOKEN_PRIVATE_KEY_PATH.read_text()
+        return Path(self.REFRESH_TOKEN_PRIVATE_KEY_PATH).read_text()
 
     @property
     def refresh_token_public_key(self) -> str:
-        return self.REFRESH_TOKEN_PUBLIC_KEY_PATH.read_text()
+        return Path(self.REFRESH_TOKEN_PUBLIC_KEY_PATH).read_text()

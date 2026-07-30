@@ -4,13 +4,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class RedisConfig(BaseSettings):
     """Класс для конфигурации Redis"""
 
-    REDIS_PASS: str
-    REDIS_HOST: str
-    REDIS_PORT: int
-    REDIS_DB: int
-    REDIS_RATE_LIMIT_DB: int
-    REDIS_QUEUE_DB: int
-    REDIS_STATS_DB: int
+    REDIS_PASS: str = 'pass'
+    REDIS_HOST: str = 'localhost'
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_RATE_LIMIT_DB: int = 1
+    REDIS_QUEUE_DB: int = 2
+    REDIS_STATS_DB: int = 3
 
     model_config = SettingsConfigDict(
         env_file='.env',

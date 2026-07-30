@@ -4,11 +4,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class DatabaseConfig(BaseSettings):
     """Класс для сборки конфигурации бд"""
 
-    DB_USER: str
-    DB_PASS: str
-    DB_HOST: str
-    DB_PORT: int
-    DB_NAME: str
+    DB_USER: str = 'postgres'
+    DB_PASS: str = 'pass'
+    DB_HOST: str = 'localhost'
+    DB_PORT: int = 5432
+    DB_NAME: str = 'task_service_dev'
 
     model_config = SettingsConfigDict(
         env_file='.env',
