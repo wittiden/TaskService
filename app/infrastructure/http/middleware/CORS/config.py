@@ -4,10 +4,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class CORSConfig(BaseSettings):
     """Класс конфигурации cors для контроля доступа"""
 
-    ALLOW_ORIGINS: str
-    ALLOW_METHODS: str
-    ALLOW_HEADERS: str
-    ALLOW_CREDENTIALS: bool
+    ALLOW_ORIGINS: str = '*'
+    ALLOW_METHODS: str = '*'
+    ALLOW_HEADERS: str = '*'
+    ALLOW_CREDENTIALS: bool = False
 
     model_config = SettingsConfigDict(
         env_file='.env',
