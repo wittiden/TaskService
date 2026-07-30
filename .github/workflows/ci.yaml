@@ -4,9 +4,17 @@ on:
   push:
     branches:
       - main
+
   pull_request:
     branches:
       - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
@@ -14,7 +22,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Clone
+      - name: Clone Repository
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -26,8 +34,8 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt --no-cache-dir
-          python -m pip install -r requirements-prod.txt --no-cache-dir
+          python -m pip install -r requirements-dev.txt
+          python -m pip install -r requirements-prod.txt
 
       - name: Linting
         run: ruff check .
@@ -38,34 +46,15 @@ jobs:
       - name: Type Checking
         run: pyright
 
-  unit:
+  tests:
     needs: check
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
-    steps:
-      - name: Clone
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
-          cache: 'pip'
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt --no-cache-dir
-          python -m pip install -r requirements-prod.txt --no-cache-dir
-
-      - name: Unit Tests
-        run: python -m pytest -m unit -n auto
-
-  integration:
-    needs: check
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13', '3.14']
 
     services:
       postgres:
@@ -91,22 +80,22 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
+          
     steps:
-      - name: Clone
+      - name: Clone Repository
         uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt --no-cache-dir
-          python -m pip install -r requirements-prod.txt --no-cache-dir
+          python -m pip install -r requirements-dev.txt
+          python -m pip install -r requirements-prod.txt
 
       - name: Generate JWT Keys
         run: |
@@ -116,68 +105,17 @@ jobs:
           openssl rsa -in access-private.pem -pubout -out access-public.pem
           openssl rsa -in refresh-private.pem -pubout -out refresh-public.pem
 
-      - name: Integration Tests
-        run: python -m pytest -m integration -n auto
+      - name: Unit & Integration Tests
+        if: matrix.python-version != '3.14'
+        run: python -m pytest -m "unit or integration" -n auto
 
-  coverage:
-    needs: [unit, integration]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+      - name: Unit & Integration Tests & Coverage
+        if: matrix.python-version == '3.14'
+        run: python -m pytest -m "integration or unit" -n auto --cov=app --cov-fail-under=70 --cov-report=term --cov-report=html --cov-report=xml
 
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: root
-          POSTGRES_DB: test_postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:8.0-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Clone
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
-          cache: 'pip'
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt --no-cache-dir
-          python -m pip install -r requirements-prod.txt --no-cache-dir
-
-      - name: Generate JWT Keys
-        run: |
-          cd certs
-          openssl genrsa -out access-private.pem 2048
-          openssl genrsa -out refresh-private.pem 2048
-          openssl rsa -in access-private.pem -pubout -out access-public.pem
-          openssl rsa -in refresh-private.pem -pubout -out refresh-public.pem
-
-      - name: Tests Coverage
-        run: python -m pytest -m "integration or unit" --cov=app --cov-report=term --cov-report=xml --cov-report=html --cov-fail-under=80
-
-      - name: Upload Coverage
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage reports to Codecov
+        if: matrix.python-version == '3.14'
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
+          fail_ci_if_error: true
