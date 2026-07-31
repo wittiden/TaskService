@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
   pull_request:
     branches:
       - main
@@ -80,7 +79,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-          
+
     steps:
       - name: Clone Repository
         uses: actions/checkout@v4
@@ -105,13 +104,13 @@ jobs:
           openssl rsa -in access-private.pem -pubout -out access-public.pem
           openssl rsa -in refresh-private.pem -pubout -out refresh-public.pem
 
-      - name: Unit & Integration Tests
+      - name: Run Unit & Integration Tests
         if: matrix.python-version != '3.14'
         run: python -m pytest -m "unit or integration" -n auto
 
-      - name: Unit & Integration Tests & Coverage
+      - name: Run Unit & Integration Tests & Coverage
         if: matrix.python-version == '3.14'
-        run: python -m pytest -m "integration or unit" -n auto --cov=app --cov-fail-under=70 --cov-report=term --cov-report=html --cov-report=xml
+        run: python -m pytest -m "unit or integration" -n auto --cov=app --cov-fail-under=70 --cov-report=term --cov-report=html --cov-report=xml
 
       - name: Upload coverage reports to Codecov
         if: matrix.python-version == '3.14'
