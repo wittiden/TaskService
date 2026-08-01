@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY requirements-prod.txt .
 
-RUN pip install -r --no-cache-dir requirements-prod.txt
+RUN pip install -r requirements-prod.txt --no-cache-dir
 
 COPY . .
 

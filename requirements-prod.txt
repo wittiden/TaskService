@@ -26,3 +26,6 @@ pyjwt[crypto]~=2.13.0
 
 #logger
 loguru~=0.7.3
+
+#melt
+prometheus-fastapi-instrumentator~=8.1.0
