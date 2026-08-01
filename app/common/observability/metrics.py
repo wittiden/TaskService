@@ -7,7 +7,7 @@ def setup_prometheus(app: FastAPI) -> Instrumentator:
     prometheus_instrument = Instrumentator(
         should_group_status_codes=True,
         should_ignore_untemplated=True,
-        excluded_handlers=['/health', '/metrics'],
+        excluded_handlers=['/health', '/metrics', '/openapi.json', '/docs'],
     )
 
     prometheus_instrument.instrument(app).expose(

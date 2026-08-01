@@ -23,7 +23,7 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health/app"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health/app || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -54,7 +54,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -76,7 +76,7 @@ services:
     profiles:
       - pgadmin
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "http://localhost/misc/ping" ]
+      test: ["CMD-SHELL", "wget --spider http://localhost/misc/ping || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -96,7 +96,7 @@ services:
     environment:
       - REDIS_PASS=${REDIS_PASS}
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASS}", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASS} ping || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -138,12 +138,32 @@ services:
       - '--storage.tsdb.retention.time=15d'
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/ready" ]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/ready || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
 
+  grafana:
+    image: grafana/grafana:13.0-slim
+    container_name: task_service_grafana
+    stop_grace_period: 30s
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USERNAME}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    networks:
+      - network
+    volumes:
+      - grafana_volume:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 
 volumes:
@@ -157,6 +177,8 @@ volumes:
     name: task_service_redisinsight_volume
   prometheus_volume:
     name: task_service_prometheus_volume
+  grafana_volume:
+    name: task_service_grafana_volume
 
 
 networks:
