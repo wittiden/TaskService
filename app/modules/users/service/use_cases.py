@@ -1,4 +1,3 @@
-from copy import copy
 from uuid import UUID
 
 from loguru import logger
@@ -95,7 +94,7 @@ class UpdateUserCase:
             logger.debug('No new parameters to update', extra={'user_id': current_user.user_id})
             return SecurityUserInfoDTO.model_validate(current_user)
 
-        for key, value in copy(new_params.items()):
+        for key, value in list(new_params.items()):
             if key == 'password':
                 continue
 
