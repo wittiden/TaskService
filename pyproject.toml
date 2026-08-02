@@ -40,3 +40,23 @@ quote-style = "single"
 indent-style = "space"
 line-ending = "lf"
 docstring-code-format = true
+
+[tool.coverage.report]
+fail_under = 70
+
+exclude_lines = [
+    "pragma: no cover",
+    "logger.debug",
+    "logger.info",
+    "logger.warning",
+    "logger.error",
+    "if __name__ == .__main__.:",
+]
+
+omit = [
+    "*/tests/*",
+    "*/migrations/*",
+    "*/__init__.py",
+    "*/conftest.py",
+    "*/config.py",
+]
