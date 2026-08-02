@@ -5,6 +5,7 @@ pyright~=1.1.411
 
 #tests
 pytest~=9.1.1
+pytest-env~=1.7.0
 pytest-asyncio~=1.4.0
 pytest-mock~=3.15.1
 pytest-cov~=7.1.0

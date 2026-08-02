@@ -71,6 +71,7 @@ Thumbs.db
 # =========================
 *.log
 logs/
+!app/common/observability/logs/
 
 # =========================
 # Distribution / build

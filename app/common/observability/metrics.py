@@ -2,8 +2,13 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from prometheus_fastapi_instrumentator import Instrumentator, metrics
 
+from app.common.config import application_config
 
-def setup_prometheus(app: FastAPI) -> Instrumentator:
+
+def setup_prometheus(app: FastAPI) -> None:
+    if application_config.is_test:
+        return
+
     prometheus_instrument = Instrumentator(
         should_group_status_codes=True,
         should_ignore_untemplated=True,
@@ -29,5 +34,3 @@ def setup_prometheus(app: FastAPI) -> Instrumentator:
             and 'GET' in route.methods
         ):
             route.tags = ['observability']
-
-    return prometheus_instrument

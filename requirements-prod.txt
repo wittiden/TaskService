@@ -29,3 +29,4 @@ loguru~=0.7.3
 
 #observability
 prometheus-fastapi-instrumentator~=8.1.0
+sentry-sdk~=2.66.1

@@ -60,7 +60,7 @@ services:
       retries: 5
 
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:9.0.0
     container_name: task_service_pgadmin
     restart: unless-stopped
     stop_grace_period: 30s
@@ -102,7 +102,7 @@ services:
       retries: 5
 
   redisinsight:
-    image: redislabs/redisinsight:3.6
+    image: redislabs/redisinsight:3.8.0
     container_name: task_service_redisinsight
     volumes:
       - redisinsight_volume:/data
@@ -145,7 +145,7 @@ services:
       start_period: 10s
 
   grafana:
-    image: grafana/grafana:13.0-slim
+    image: grafana/grafana:13.1-slim
     container_name: task_service_grafana
     stop_grace_period: 30s
     environment:
@@ -164,6 +164,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    profiles:
+      - grafana
 
 
 volumes:

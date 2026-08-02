@@ -6,7 +6,6 @@ from alembic.config import Config
 from asgi_lifespan import LifespanManager
 from fastapi import status
 from httpx import ASGITransport, AsyncClient
-from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from testcontainers.postgres import PostgresContainer
 from testcontainers.redis import AsyncRedisContainer
@@ -16,9 +15,6 @@ from app.container.container import create_async_container
 from app.infrastructure.database.config import database_config
 from app.infrastructure.redis.config import redis_config
 from tests.factories.user import UsersFactory
-
-logger.disable('app.infrastructure.http.lifespan')
-logger.disable('app.infrastructure.http.middleware.logger')
 
 
 @pytest.fixture(scope='session')
