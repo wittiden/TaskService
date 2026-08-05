@@ -18,28 +18,56 @@ select = [
     "F",
     "I",
     "B",
+    "C4",
     "UP",
     "SIM",
     "ASYNC",
     "PERF",
     "RUF",
+    "S",
+    "D",
+    "TCH",
+    "TID",
+    "RET",
+    "PLC",
+    "PLE",
 ]
 
 ignore = [
     "B008",
     "RUF002",
     "RUF001",
+    "D100",
+    "D104",
+    "D107",
+    "S101",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
-"**/__init__.py" = ["F401"]
+"tests/*" = ["S101", "D", "S"]
+"**/__init__.py" = ["F401", "D"]
 
 [tool.ruff.format]
 quote-style = "single"
 indent-style = "space"
 line-ending = "lf"
 docstring-code-format = true
+
+[tool.pyright]
+include = ["app"]
+exclude = ["**/__pycache__", ".venv", "tests", "migrations", "alembic"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+reportMissingImports = true
+reportMissingTypeStubs = true
+reportUnusedImport = true
+reportUnusedFunction = true
+reportUnusedVariable = true
+reportUnusedClass = true
+reportUnusedCallResult = true
+reportUnusedParameter = false
+reportImplicitOverride = true
+reportPropertyTypeMismatch = true
 
 [tool.coverage.report]
 fail_under = 70
@@ -50,7 +78,10 @@ exclude_lines = [
     "logger.info",
     "logger.warning",
     "logger.error",
+    "logger.critical",
     "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "pass",
 ]
 
 omit = [
@@ -59,4 +90,30 @@ omit = [
     "*/__init__.py",
     "*/conftest.py",
     "*/config.py",
+    "*/alembic/*",
 ]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--cov=app",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "--cov-report=html",
+    "--cov-fail-under=70",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "e2e: End-to-end tests",
+    "slow: Slow tests",
+    "async: Async tests",
+]
+asyncio_mode = "auto"
