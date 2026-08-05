@@ -65,9 +65,7 @@ class CreateTaskCase:
             raise TaskLimitError(
                 f'Tasks limit for standard user = {self._task_config.STANDARD_TASK_COUNT_LIMIT}'
             )
-        elif (
-            current_user.role == UserRoleEnum.VIP and count > self._task_config.VIP_TASK_COUNT_LIMIT
-        ):
+        if current_user.role == UserRoleEnum.VIP and count > self._task_config.VIP_TASK_COUNT_LIMIT:
             logger.warning(
                 'Task limit exceeded for VIP user',
                 extra={

@@ -29,8 +29,7 @@ def app_exception_handler(request: Request, exc: Exception) -> JSONResponse:
 
 
 def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> Response:
-    """
-    Build a simple JSON response that includes the details of the rate limit
+    """Build a simple JSON response that includes the details of the rate limit
     that was hit. If no limit is hit, the countdown is added to headers.
     """
     response = JSONResponse(

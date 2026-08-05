@@ -23,8 +23,7 @@ class UnitOfWork:
                 await self._async_session.rollback()
                 raise
 
-            else:
-                await self._async_session.commit()
+            await self._async_session.commit()
         except Exception as exc:
             await self._async_session.rollback()
             raise exc
