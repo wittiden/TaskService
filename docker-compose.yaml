@@ -75,11 +75,6 @@ services:
       - pgadmin_volume:/var/lib/pgadmin
     profiles:
       - pgadmin
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider http://localhost/misc/ping || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
 
   redis:
     image: redis:8.0-alpine
@@ -106,19 +101,12 @@ services:
     container_name: task_service_redisinsight
     volumes:
       - redisinsight_volume:/data
-    environment:
-      - RI_ENCRYPTION_KEY=${RI_ENCRYPTION_KEY}
     ports:
       - "5540:5540"
     restart: unless-stopped
     networks:
       - network
     stop_grace_period: 30s
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:5540 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     profiles:
       - redisinsight
 
@@ -128,21 +116,15 @@ services:
     stop_grace_period: 30s
     networks:
       - network
-    ports:
-      - "9090:9090"
+    expose:
+      - "9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./app/common/observability/metrics/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_volume:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=15d'
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/ready || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
   grafana:
     image: grafana/grafana:13.1-slim
@@ -158,14 +140,38 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
     profiles:
       - grafana
+
+  loki:
+    image: grafana/loki:3.7.0
+    container_name: task_service_loki
+    stop_grace_period: 30s
+    networks:
+      - network
+    expose:
+      - "3100"
+    volumes:
+      - ./app/common/observability/logs/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_volume:/loki
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.6.0
+    container_name: task_service_promtail
+    networks:
+      - network
+    volumes:
+      - ./app/common/observability/logs/promtail-config.yaml:/etc/promtail/local-config.yaml
+      - ./logs:/var/log/app:ro
+    command:
+      - -config.file=/etc/promtail/local-config.yaml
+    stop_grace_period: 30s
+    restart: unless-stopped
+    expose:
+      - "9080"
 
 
 volumes:
@@ -181,6 +187,8 @@ volumes:
     name: task_service_prometheus_volume
   grafana_volume:
     name: task_service_grafana_volume
+  loki_volume:
+    name: task_service_loki_volume
 
 
 networks:

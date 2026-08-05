@@ -27,6 +27,8 @@ class LoggerMiddleware(BaseHTTPMiddleware):
 
         if 200 <= response.status_code < 300:
             logger.info(logger_str)
+        elif 400 <= response.status_code < 500:
+            logger.warning(logger_str)
         else:
             logger.error(logger_str)
 

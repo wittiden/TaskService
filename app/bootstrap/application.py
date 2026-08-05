@@ -8,7 +8,7 @@ from app.bootstrap.routers import setup_routers
 from app.common.limiter.config import limiter
 from app.common.observability.events.sentry import setup_sentry
 from app.common.observability.logs.config import setup_logger
-from app.common.observability.metrics import setup_prometheus
+from app.common.observability.metrics.setup import setup_prometheus
 from app.container.container import async_container
 from app.infrastructure.http.lifespan import lifespan
 from app.infrastructure.http.middleware.CORS.config import cors_config
