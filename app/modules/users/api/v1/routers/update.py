@@ -1,10 +1,17 @@
 from uuid import UUID
 
 from dishka.integrations.fastapi import FromDishka, inject
-from fastapi import APIRouter, status
+from fastapi import APIRouter, BackgroundTasks, status
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.common.email_service.templates.update import (
+    close_user_body,
+    close_user_subject,
+    update_user_body,
+    update_user_subject,
+)
+from app.common.email_service.utils import send_email
 from app.common.limiter.config import limiter
 from app.common.security.jwt_current import CurrentAdmin, CurrentUser
 from app.infrastructure.unit_of_work.uow import UnitOfWork
@@ -26,7 +33,14 @@ async def update_me_endpoint(
     schema: UpdateUserSchema,
     case: FromDishka[UpdateUserCase],
     uow: FromDishka[UnitOfWork],
+    bg_task: BackgroundTasks,
 ) -> SecurityUserInfoDTO:
+    bg_task.add_task(
+        send_email,
+        to_email=current_user.email,
+        subject=update_user_subject(current_user.name),
+        body=update_user_body(current_user.name),
+    )
     return await case.update_user_params(current_user, schema.model_dump(exclude_none=True))
 
 
@@ -41,7 +55,14 @@ async def close_my_account_endpoint(
     current_user: CurrentUser,
     case: FromDishka[DeleteUserCase],
     uow: FromDishka[UnitOfWork],
+    bg_task: BackgroundTasks,
 ) -> None:
+    bg_task.add_task(
+        send_email,
+        to_email=current_user.email,
+        subject=close_user_subject(current_user.name),
+        body=close_user_body(current_user.name),
+    )
     await case.close_my_account(current_user)
 
 

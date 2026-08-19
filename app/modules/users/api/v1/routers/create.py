@@ -1,8 +1,10 @@
 from dishka.integrations.fastapi import FromDishka, inject
-from fastapi import APIRouter, status
+from fastapi import APIRouter, BackgroundTasks, status
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.common.email_service.templates.create import create_user_body, create_user_subject
+from app.common.email_service.utils import send_email
 from app.common.limiter.config import limiter
 from app.infrastructure.unit_of_work.uow import UnitOfWork
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO
@@ -26,7 +28,14 @@ async def create_standard_endpoint(
     schema: CreateUserSchema,
     case: FromDishka[CreateUserCase],
     uow: FromDishka[UnitOfWork],
+    bg_task: BackgroundTasks,
 ) -> SecurityUserInfoDTO:
+    bg_task.add_task(
+        send_email,
+        to_email=schema.email,
+        subject=create_user_subject(schema.name),
+        body=create_user_body(schema.name),
+    )
     return await case.create_standard(schema.name, schema.email, schema.password)
 
 
@@ -44,7 +53,14 @@ async def create_admin_endpoint(
     schema: CreateUserSchema,
     case: FromDishka[CreateUserCase],
     uow: FromDishka[UnitOfWork],
+    bg_tasks: BackgroundTasks,
 ) -> SecurityUserInfoDTO:
+    bg_tasks.add_task(
+        send_email,
+        to_email=schema.email,
+        subject=create_user_subject(schema.name),
+        body=create_user_body(schema.name),
+    )
     return await case.create_admin(schema.name, schema.email, schema.password)
 
 
@@ -62,5 +78,12 @@ async def create_vip_endpoint(
     schema: CreateUserSchema,
     case: FromDishka[CreateUserCase],
     uow: FromDishka[UnitOfWork],
+    bg_tasks: BackgroundTasks,
 ) -> SecurityUserInfoDTO:
+    bg_tasks.add_task(
+        send_email,
+        to_email=schema.email,
+        subject=create_user_subject(schema.name),
+        body=create_user_body(schema.name),
+    )
     return await case.create_vip(schema.name, schema.email, schema.password)
