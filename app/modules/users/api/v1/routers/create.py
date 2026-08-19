@@ -1,8 +1,9 @@
 from dishka.integrations.fastapi import FromDishka, inject
-from fastapi import APIRouter, status
+from fastapi import APIRouter, BackgroundTasks, status
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.common.email_service.utils import send_email
 from app.common.limiter.config import limiter
 from app.infrastructure.unit_of_work.uow import UnitOfWork
 from app.modules.users.contracts.dtos import SecurityUserInfoDTO
@@ -26,7 +27,14 @@ async def create_standard_endpoint(
     schema: CreateUserSchema,
     case: FromDishka[CreateUserCase],
     uow: FromDishka[UnitOfWork],
+    bg_task: BackgroundTasks,
 ) -> SecurityUserInfoDTO:
+    bg_task.add_task(
+        send_email,
+        to_email='ar.denis.by@gmail.com',
+        subject='Welcome to TaskService!',
+        body=f'Hello {schema.name}!\n\nYour account has been created successfully',
+    )
     return await case.create_standard(schema.name, schema.email, schema.password)
 
 
