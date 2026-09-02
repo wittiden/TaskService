@@ -1,15 +1,15 @@
-def update_user_subject(name: str) -> str:
-    return f'{name}, ваш профиль в TaskService обновлён'
+def unblock_user_subject(name: str) -> str:
+    return f'{name}, ваш аккаунт в TaskService разблокирован'
 
 
-def update_user_body(name: str) -> str:
+def unblock_user_body(name: str) -> str:
     return f"""
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskService — Профиль обновлён</title>
+    <title>TaskService</title>
     <style>
         body {{
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -27,31 +27,24 @@ def update_user_body(name: str) -> str:
         }}
         .header {{
             text-align: center;
-            border-bottom: 2px solid #e8f0f8;
+            border-bottom: 2px solid #e6f0e6;
             padding-bottom: 20px;
-        }}
-        .header .icon {{
-            font-size: 48px;
-            display: block;
-            margin-bottom: 10px;
         }}
         .header h1 {{
             font-size: 26px;
             color: #1a2b3c;
             margin: 0;
         }}
+        .header .icon {{
+            font-size: 48px;
+            display: block;
+            margin-bottom: 10px;
+        }}
         .content {{
             padding: 24px 0;
             color: #2c3e50;
             line-height: 1.7;
             font-size: 16px;
-        }}
-        .content ul {{
-            padding-left: 20px;
-            margin: 16px 0;
-        }}
-        .content ul li {{
-            margin-bottom: 8px;
         }}
         .footer {{
             text-align: center;
@@ -62,7 +55,7 @@ def update_user_body(name: str) -> str:
             margin-top: 10px;
         }}
         .highlight {{
-            color: #2a7de1;
+            color: #2e7d32;
             font-weight: 600;
         }}
         .button {{
@@ -78,37 +71,24 @@ def update_user_body(name: str) -> str:
         .button:hover {{
             background: #1a5fb0;
         }}
-        .emoji {{
-            font-size: 20px;
-        }}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Профиль обновлён</h1>
+            <span class="icon">🔓</span>
+            <h1>Аккаунт разблокирован</h1>
         </div>
 
         <div class="content">
             <p>Здравствуйте, <strong>{name}</strong>!</p>
 
             <p>
-                Ваш профиль в <span class="highlight">TaskService</span> был 
-                <strong>успешно обновлён</strong>.
+                Ваш аккаунт в <span class="highlight">TaskService</span> был 
+                <strong>разблокирован</strong>.
             </p>
 
-            <p><strong>Что могло измениться:</strong></p>
-            <ul>
-                <li>Имя или контактные данные</li>
-                <li>Пароль или настройки безопасности</li>
-                <li>Email для уведомлений</li>
-                <li>Персональные настройки</li>
-            </ul>
-
-            <p>
-                Если вы не вносили изменения — 
-                <strong>немедленно свяжитесь с поддержкой</strong>.
-            </p>
+            <p>Вы снова можете пользоваться всеми функциями сервиса.</p>
 
             <p>С уважением,<br><strong>Команда TaskService</strong></p>
         </div>

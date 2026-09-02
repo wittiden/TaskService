@@ -1,15 +1,15 @@
-def update_user_subject(name: str) -> str:
-    return f'{name}, ваш профиль в TaskService обновлён'
+def close_user_subject(name: str) -> str:
+    return f'{name}, ваш аккаунт в TaskService закрыт'
 
 
-def update_user_body(name: str) -> str:
+def close_user_body(name: str) -> str:
     return f"""
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskService — Профиль обновлён</title>
+    <title>TaskService</title>
     <style>
         body {{
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -27,18 +27,18 @@ def update_user_body(name: str) -> str:
         }}
         .header {{
             text-align: center;
-            border-bottom: 2px solid #e8f0f8;
+            border-bottom: 2px solid #f0e6e6;
             padding-bottom: 20px;
-        }}
-        .header .icon {{
-            font-size: 48px;
-            display: block;
-            margin-bottom: 10px;
         }}
         .header h1 {{
             font-size: 26px;
             color: #1a2b3c;
             margin: 0;
+        }}
+        .header .icon {{
+            font-size: 48px;
+            display: block;
+            margin-bottom: 10px;
         }}
         .content {{
             padding: 24px 0;
@@ -62,7 +62,7 @@ def update_user_body(name: str) -> str:
             margin-top: 10px;
         }}
         .highlight {{
-            color: #2a7de1;
+            color: #d32f2f;
             font-weight: 600;
         }}
         .button {{
@@ -86,29 +86,18 @@ def update_user_body(name: str) -> str:
 <body>
     <div class="container">
         <div class="header">
-            <h1>Профиль обновлён</h1>
+            <h1>Аккаунт закрыт</h1>
         </div>
 
         <div class="content">
             <p>Здравствуйте, <strong>{name}</strong>!</p>
 
             <p>
-                Ваш профиль в <span class="highlight">TaskService</span> был 
-                <strong>успешно обновлён</strong>.
+                Ваш аккаунт в <span class="highlight">TaskService</span> был 
+                <strong>успешно закрыт</strong> по вашему запросу.
             </p>
 
-            <p><strong>Что могло измениться:</strong></p>
-            <ul>
-                <li>Имя или контактные данные</li>
-                <li>Пароль или настройки безопасности</li>
-                <li>Email для уведомлений</li>
-                <li>Персональные настройки</li>
-            </ul>
-
-            <p>
-                Если вы не вносили изменения — 
-                <strong>немедленно свяжитесь с поддержкой</strong>.
-            </p>
+            <p>Будем рады видеть вас снова!</p>
 
             <p>С уважением,<br><strong>Команда TaskService</strong></p>
         </div>
