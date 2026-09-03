@@ -27,3 +27,21 @@ class SessionCommandsRepository:
         )
 
         return deleted_obj_id.scalar_one_or_none()
+
+    async def delete_dead_tokens(self) -> int:
+        result = await self._async_session.execute(
+            delete(RefreshTokenModel)
+            .where(
+                or_(
+                    RefreshTokenModel.revoked_at.is_not(None),
+                    RefreshTokenModel.expired_at < datetime.now(UTC),
+                )
+            )
+            .returning(RefreshTokenModel.refresh_token_id)
+        )
+
+        deleted_count = len(result.scalars().all())
+
+        await self._async_session.commit()
+
+        return deleted_count

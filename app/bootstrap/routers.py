@@ -1,5 +1,7 @@
+from celery_farm import create_beat_app, create_task_app
 from fastapi import FastAPI
 
+from app.common.task_service.utils import celery
 from app.infrastructure.http.healthcheck.api.v1.endpoints import health_router
 from app.modules.audits.api.v1.routers.read import (
     read_admin_task_audits_router,
@@ -35,6 +37,13 @@ ROUTER_LIST = [
     delete_admin_sessions_router,
     read_admin_sessions_router,
 ]
+
+if celery:
+    celery_task_app = create_task_app(celery)
+    celery_beat_app = create_beat_app(celery)
+
+    ROUTER_LIST.insert(1, celery_task_app.router)
+    ROUTER_LIST.insert(2, celery_beat_app.router)
 
 
 def setup_routers(app: FastAPI) -> None:

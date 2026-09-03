@@ -7,7 +7,7 @@ services:
       - author=wittiden
       - project=TaskService
       - version=2.0.0
-    image: task_service_app:1.0.0
+    image: task_service_app:2.0
     container_name: task_service_app
     restart: unless-stopped
     stop_grace_period: 30s
@@ -100,27 +100,48 @@ services:
       timeout: 10s
       retries: 5
 
-  celery:
+  celery_worker:
     build: .
-    container_name: task_service_celery
+    image: task_service_celery_worker:1.0
+    container_name: task_service_celery_worker
     command: celery -A app.common.task_service.utils worker --loglevel=info --concurrency=2
     environment:
       - CELERY_BROKER_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASSWORD:-password}@rabbitmq:5672//
-      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASS}@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASS}@redis:6379/2
     volumes:
       - .:/app
     stop_grace_period: 30s
     depends_on:
       rabbitmq:
         condition: service_healthy
-      app:
+      redis:
         condition: service_healthy
     restart: unless-stopped
     networks:
       - network
 
+  celery_beat:
+    build: .
+    image: task_service_celery_beat:1.0
+    container_name: task_service_celery_beat
+    restart: unless-stopped
+    stop_grace_period: 30s
+    command: celery -A app.common.task_service.utils beat --loglevel=info --schedule=/tmp/celerybeat-schedule
+    environment:
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASSWORD:-password}@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASS}@redis:6379/2
+    networks:
+      - network
+    volumes:
+      - .:/app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   pgadmin:
-    image: dpage/pgadmin4:9.0.0
+    image: dpage/pgadmin4:9.17
     container_name: task_service_pgadmin
     restart: unless-stopped
     stop_grace_period: 30s
@@ -133,6 +154,9 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASS}
     volumes:
       - pgadmin_volume:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
     profiles:
       - pgadmin
 
@@ -144,11 +168,40 @@ services:
     ports:
       - "5540:5540"
     restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
     networks:
       - network
     stop_grace_period: 30s
     profiles:
       - redisinsight
+
+  celery_flower:
+    build: .
+    image: task_service_celery_flower:1.0
+    container_name: task_service_celery_flower
+    stop_grace_period: 30s
+    restart: unless-stopped
+    command: celery -A app.common.task_service.utils flower --port=5555 --result_backend=redis://:${REDIS_PASS}@redis:6379/2
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASS}@redis:6379/2
+      - FLOWER_BASIC_AUTH=${FLOWER_USER}:${FLOWER_PASSWORD}
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      celery_worker:
+        condition: service_started
+    networks:
+      - network
+    volumes:
+      - .:/app
+      - celery_flower_volume:/data
 
   prometheus:
     image: prom/prometheus:v3.1.0
@@ -165,38 +218,9 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=15d'
     restart: unless-stopped
-
-  grafana:
-    image: grafana/grafana:13.1-slim
-    container_name: task_service_grafana
-    stop_grace_period: 30s
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_USERNAME}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-    networks:
-      - network
-    volumes:
-      - grafana_volume:/var/lib/grafana
-    ports:
-      - "3000:3000"
-    restart: unless-stopped
-    profiles:
-      - grafana
-
-  loki:
-    image: grafana/loki:3.7.0
-    container_name: task_service_loki
-    stop_grace_period: 30s
-    networks:
-      - network
-    expose:
-      - "3100"
-    volumes:
-      - ./app/common/observability/logs/loki-config.yaml:/etc/loki/local-config.yaml
-      - loki_volume:/loki
-    command:
-      - -config.file=/etc/loki/local-config.yaml
-    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
 
   promtail:
     image: grafana/promtail:3.6.0
@@ -213,6 +237,42 @@ services:
     expose:
       - "9080"
 
+  loki:
+    image: grafana/loki:3.7.0
+    container_name: task_service_loki
+    stop_grace_period: 30s
+    networks:
+      - network
+    expose:
+      - "3100"
+    volumes:
+      - ./app/common/observability/logs/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_volume:/loki
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.1-slim
+    container_name: task_service_grafana
+    stop_grace_period: 30s
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USERNAME}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    networks:
+      - network
+    volumes:
+      - grafana_volume:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_started
+    profiles:
+      - grafana
 
 
 volumes:
@@ -232,6 +292,8 @@ volumes:
     name: task_service_loki_volume
   rabbitmq_volume:
     name: task_service_rabbitmq_volume
+  celery_flower_volume:
+    name: task_service_celery_flower_volume
 
 
 networks:

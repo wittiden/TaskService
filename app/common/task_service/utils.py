@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.schedules import crontab
 
 from app.common.config import application_config
 from app.common.task_service.config import task_service_config
@@ -12,8 +13,8 @@ def make_celery() -> Celery | None:
     celery_obj = Celery(
         'TaskServiceCelery',
         broker=f'amqp://{task_service_config.RABBITMQ_USER}:{task_service_config.RABBITMQ_PASSWORD}@{task_service_config.RABBITMQ_HOST}:{task_service_config.RABBITMQ_PORT}//',
-        backend=redis_config.redis_db_url,
-        include=['app.common.task_service.tasks.send'],
+        backend=redis_config.redis_queue_db_url,
+        include=['app.common.task_service.tasks.email', 'app.common.task_service.tasks.periodic'],
     )
 
     celery_obj.conf.update(
@@ -23,6 +24,16 @@ def make_celery() -> Celery | None:
         timezone='UTC',
         enable_utc=True,
         task_track_started=True,
+        beat_schedule={
+            'delete-dead-tokens-daily': {
+                'task': 'dead_tokens_delete',
+                'schedule': crontab(hour=1, minute=0),
+            },
+            'delete-closed-accounts-daily': {
+                'task': 'closed_account_delete',
+                'schedule': crontab(hour=2, minute=0),
+            },
+        },
     )
 
     return celery_obj

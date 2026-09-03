@@ -1,7 +1,7 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import delete, update
+from sqlalchemy import and_, delete, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -82,3 +82,19 @@ class UserCommandsRepository:
         except IntegrityError:
             await self._async_session.rollback()
             raise
+
+    async def delete_closed_users(self) -> int:
+        deleted_users = await self._async_session.execute(
+            delete(UserModel)
+            .where(
+                and_(
+                    UserModel.closed_at.is_not(None),
+                    UserModel.closed_at < datetime.now(UTC) - timedelta(days=15),
+                )
+            )
+            .returning(UserModel.user_id)
+        )
+
+        await self._async_session.commit()
+
+        return len(deleted_users.scalars().all())
