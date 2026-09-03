@@ -1,6 +1,6 @@
 # TaskService v2.0.0
 
-Production-ready REST API for task management with full observability stack (MELT: Metrics, Events, Logs, Traces).
+Production-ready REST API for task management with full observability stack (MELT: Metrics, Events, Logs, Traces) and asynchronous background processing powered by Celery.
 
 [![CI](https://github.com/wittiden/TaskService/actions/workflows/ci.yaml/badge.svg)](https://github.com/wittiden/TaskService/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/wittiden/TaskService/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/TaskService)
@@ -15,6 +15,7 @@ Production-ready REST API for task management with full observability stack (MEL
 - [Architecture](#-architecture)
 - [Project Structure](#-project-structure)
 - [Quick Start](#-quick-start)
+- [Background Tasks (Celery)](#-background-tasks-celery)
 - [Configuration](#-configuration)
 - [Development](#-development)
 - [Testing](#-testing)
@@ -35,6 +36,9 @@ Production-ready REST API for task management with full observability stack (MEL
 - **Audit Logging** — Track all user and task changes
 - **Async PostgreSQL** — High-performance async ORM with SQLAlchemy 2.0
 - **Redis Caching** — User sessions and current user cache
+- **Background Task Processing** — Celery workers + beat scheduler on a RabbitMQ broker, with a Flower dashboard for live monitoring
+- **Async Email Notifications** — Account lifecycle emails (create, update, block, unblock, close) sent off the request path via Celery
+- **Scheduled Cleanup Jobs** — Daily jobs purge dead refresh tokens and closed accounts automatically
 - **Database Migrations** — Alembic with version control
 - **Testing** — Unit, integration, and E2E tests with 70%+ coverage
 
@@ -48,6 +52,16 @@ Production-ready REST API for task management with full observability stack (MEL
 | **Uvicorn** | 0.49.0 | ASGI server |
 | **Gunicorn** | 26.0.0 | Production server |
 | **SlowAPI** | 0.1.10 | Rate limiting |
+
+### Background Tasks
+| Component | Version | Purpose |
+|-----------|---------|---------|
+| **Celery** | 5.6.3 | Distributed task queue |
+| **Celery Farm** | 0.1.1 | Task orchestration helpers |
+| **Flower** | 2.1.0 | Web UI for monitoring workers/tasks |
+| **RabbitMQ** | 3.8.14 | Message broker |
+| **Pika** | 1.4.4 | AMQP client library |
+| **AIOSMTPLib** | 5.1.2 | Async SMTP client for email sending |
 
 ### Dependency Injection
 | Component | Version | Purpose |
@@ -129,6 +143,35 @@ The project follows **Clean Architecture** principles with a clear separation of
 - **Factory Pattern** — Object creation
 - **Observer Pattern** — Audit logging
 
+### Background Processing Layer
+
+Alongside the request/response cycle, the app ships a separate **Celery-based worker layer** that shares the same DI container and repositories as the API — long-running or non-critical work (sending email, cleaning up stale data) never blocks an HTTP response:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                      FastAPI (app)                          │
+│         Routers call celery.send_task(...) and return       │
+└──────────────────────────────────────────────────────────────┘
+                              │  publishes task
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│                     RabbitMQ (broker)                       │
+└──────────────────────────────────────────────────────────────┘
+                              │  consumes task
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│           Celery Worker  ·  Celery Beat (scheduler)          │
+│   Uses the same Dishka container/repositories as the API     │
+└──────────────────────────────────────────────────────────────┘
+                              │  stores task result
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│                  Redis (result backend, DB 2)               │
+└──────────────────────────────────────────────────────────────┘
+
+              Flower (web UI) watches broker + backend
+```
+
 ## 📁 Project Structure
 
 ```
@@ -145,6 +188,17 @@ TaskService/
 │   │   ├── enums/                 # Enumerations
 │   │   ├── exceptions/            # Base exceptions
 │   │   ├── limiter/               # Rate limiting
+│   │   ├── email_service/         # Async email sending (SMTP)
+│   │   │   ├── config.py          # SMTP settings
+│   │   │   ├── exception.py       # Email-specific exceptions
+│   │   │   ├── utils.py           # send_email() (aiosmtplib)
+│   │   │   └── templates/         # HTML templates (create/update/block/unblock/close)
+│   │   ├── task_service/          # Celery integration
+│   │   │   ├── config.py          # RabbitMQ/Celery settings
+│   │   │   ├── utils.py           # make_celery() app factory + beat schedule
+│   │   │   └── tasks/
+│   │   │       ├── email.py       # send_email — async email delivery task
+│   │   │       └── periodic.py    # dead_tokens_delete, closed_account_delete
 │   │   ├── observability/         # MELT stack
 │   │   │   ├── logs/              # Loguru configuration
 │   │   │   ├── events/            # Sentry configuration
@@ -186,9 +240,8 @@ TaskService/
 ├── .pre-commit-config.yaml
 ├── pyproject.toml                 # Project configuration
 ├── pytest.ini                     # Pytest configuration
-├── docker-compose.yml             # Docker services
-├── Dockerfile                     # App Docker image
-├── prometheus.yml                 # Prometheus config
+├── docker-compose.yaml            # Docker services (app, db, redis, rabbitmq, celery, observability)
+├── Dockerfile                     # App / worker / beat / flower image
 ├── requirements-dev.txt           # Dev dependencies
 ├── requirements-prod.txt          # Production dependencies
 ├── LICENSE
@@ -200,7 +253,7 @@ TaskService/
 ### Prerequisites
 
 - Python 3.12+
-- Docker & Docker Compose
+- Docker & Docker Compose (used to run PostgreSQL, Redis, and RabbitMQ even in local dev)
 - Git
 - Make (optional)
 
@@ -250,11 +303,133 @@ TaskService/
    uvicorn app.main:app --reload
    ```
 
-8. **Access the API:**
+8. **(Optional) Start Celery worker + beat for background tasks:**
+   Requires a running RabbitMQ instance (`docker compose up -d rabbitmq redis`) and the `RABBITMQ_*` / `REDIS_*` variables set in `.env`.
+   ```bash
+   celery -A app.common.task_service.utils worker --loglevel=info --concurrency=2
+   celery -A app.common.task_service.utils beat --loglevel=info
+   ```
+   See [Background Tasks (Celery)](#-background-tasks-celery) for the full breakdown.
+
+9. **Access the API:**
    - API: http://localhost:8000
    - Documentation: http://localhost:8000/docs
    - ReDoc: http://localhost:8000/redoc
    - Metrics: http://localhost:8000/metrics
+
+## 🐇 Background Tasks (Celery)
+
+TaskService offloads slow or non-critical work from the request/response cycle onto a Celery-based background processing layer. The API only *publishes* tasks — it never waits on them.
+
+### Components
+
+| Component | Role |
+|-----------|------|
+| **Celery Worker** | Consumes tasks from RabbitMQ and executes them (email sending, cleanup jobs) |
+| **Celery Beat** | Scheduler — periodically enqueues the recurring cleanup tasks on a cron schedule |
+| **Flower** | Web dashboard for monitoring workers, tasks, and queues in real time |
+| **RabbitMQ** | Message broker — durable queue between the API and the workers |
+| **Redis (DB 2)** | Result backend — stores task state/results (`REDIS_QUEUE_DB`) |
+
+The Celery app itself is defined once in `app/common/task_service/utils.py` (`make_celery()`) and shared by the API (to publish tasks with `celery.send_task(...)`), the worker, and beat. In the test environment (`ENVIRONMENT=test`), `make_celery()` returns `None` and every dispatch site checks `if celery:` first, so tests never touch a broker.
+
+### Tasks
+
+| Task name | Function | Trigger | Schedule | Retries |
+|-----------|----------|---------|----------|---------|
+| `send_email` | `send_email_by_celery` | Dispatched from user routers on create / update / block / unblock / close | On-demand | 3 retries, 60s delay, 300s time limit |
+| `dead_tokens_delete` | `daily_dead_tokens_delete` | Celery Beat | Daily at **01:00 UTC** | 3 retries, 60s delay, 300s time limit |
+| `closed_account_delete` | `daily_closed_accounts_delete` | Celery Beat | Daily at **02:00 UTC** | 3 retries, 60s delay, 300s time limit |
+
+All tasks use `autoretry_for=(Exception,)`, so any unhandled exception during execution automatically triggers a retry (up to `max_retries`) instead of silently failing.
+
+**Example — dispatching a task from a router:**
+```python
+from app.common.task_service.utils import celery
+
+if celery:
+    celery.send_task(
+        "send_email",
+        args=[user.email, "Welcome to TaskService", html_body],
+    )
+```
+
+**Example — a scheduled cleanup task:**
+```python
+@celery.task(
+    name="dead_tokens_delete",
+    max_retries=3,
+    default_retry_delay=60,
+    time_limit=300,
+    autoretry_for=(Exception,),
+)
+def daily_dead_tokens_delete() -> None:
+    async def _run() -> None:
+        async with async_container() as container:
+            session_commands = await container.get(SessionCommandsRepository)
+            await session_commands.delete_dead_tokens()
+
+    asyncio.run(_run())
+```
+
+### Running Workers Locally (without Docker)
+
+```bash
+# Start a worker
+celery -A app.common.task_service.utils worker --loglevel=info --concurrency=2
+
+# Start the beat scheduler (in a separate terminal)
+celery -A app.common.task_service.utils beat --loglevel=info --schedule=/tmp/celerybeat-schedule
+
+# Start Flower to monitor both
+celery -A app.common.task_service.utils flower --port=5555
+```
+
+### Checking Task Status
+
+```bash
+# Inspect active/scheduled/reserved tasks on running workers
+celery -A app.common.task_service.utils inspect active
+celery -A app.common.task_service.utils inspect scheduled
+celery -A app.common.task_service.utils inspect reserved
+
+# Check registered periodic tasks
+celery -A app.common.task_service.utils inspect registered
+
+# Check worker liveness
+celery -A app.common.task_service.utils status
+```
+
+You can also check a specific task's result programmatically:
+```python
+from app.common.task_service.utils import celery
+
+result = celery.AsyncResult(task_id)
+print(result.status, result.result)
+```
+
+### Monitoring via Flower
+
+Flower gives you a live view of everything happening on the broker:
+
+- **Dashboard:** http://localhost:5555 (protected by HTTP basic auth — see `FLOWER_USER` / `FLOWER_PASSWORD`)
+- **Live worker pool status** — active/processed/failed task counts per worker
+- **Task history** — arguments, runtime, retries, and result for every task
+- **Broker view** — queue depth and message rates on RabbitMQ
+- **RabbitMQ management UI:** http://localhost:15672 (login via `RABBITMQ_USER` / `RABBITMQ_PASSWORD`)
+
+### Retry & Reliability Settings
+
+All Celery tasks share the same reliability defaults, configured directly on the task decorator:
+
+| Setting | Value | Meaning |
+|---------|-------|---------|
+| `max_retries` | 3 | Stop retrying after 3 attempts |
+| `default_retry_delay` | 60s | Wait 60 seconds between retries |
+| `time_limit` | 300s | Hard-kill the task if it runs longer than 5 minutes |
+| `autoretry_for` | `(Exception,)` | Any unhandled exception triggers a retry automatically |
+| `task_track_started` | `True` | Tasks report a `STARTED` state, visible in Flower |
+| `task_serializer` / `result_serializer` | `json` | All payloads are JSON — no pickle |
 
 ## 🐳 Docker Deployment
 
@@ -291,11 +466,19 @@ TaskService/
 |---------|---------------|------|---------|
 | **App** | task_service_app | 8000 | FastAPI application |
 | **PostgreSQL** | task_service_db | 5432 | Primary database |
-| **Redis** | task_service_redis | 6379 | Cache & sessions |
-| **PgAdmin** | task_service_pgadmin | 5050 | DB management (profile) |
-| **RedisInsight** | task_service_redisinsight | 5540 | Redis UI (profile) |
+| **Redis** | task_service_redis | 6379 | Cache, sessions & Celery result backend |
+| **RabbitMQ** | task_service_rabbitmq | 5672 / 15672 | Celery message broker + management UI |
+| **Celery Worker** | task_service_celery_worker | — | Executes background tasks (email, cleanup) |
+| **Celery Beat** | task_service_celery_beat | — | Schedules the periodic cleanup tasks |
+| **Flower** | task_service_celery_flower | 5555 | Web UI for monitoring Celery |
 | **Prometheus** | task_service_prometheus | 9090 | Metrics collection |
-| **Grafana** | task_service_grafana | 3000 | Visualization (profile) |
+| **Promtail** | task_service_promtail | — | Ships app logs into Loki |
+| **Loki** | task_service_loki | 3100 | Log aggregation backend |
+| **PgAdmin** | task_service_pgadmin | 5050 | DB management (`pgadmin` profile) |
+| **RedisInsight** | task_service_redisinsight | 5540 | Redis UI (`redisinsight` profile) |
+| **Grafana** | task_service_grafana | 3000 | Visualization (`grafana` profile) |
+
+> App, PostgreSQL, Redis, RabbitMQ, the Celery worker/beat, Flower, Prometheus, Promtail, and Loki all start with a plain `docker compose up -d` — only PgAdmin, RedisInsight, and Grafana are gated behind explicit `--profile` flags.
 
 ### Docker Commands
 
@@ -325,21 +508,52 @@ docker compose down -v
 
 ```env
 # Environment
-ENVIRONMENT=development
+ENVIRONMENT=dev
+
+# Server
+SERVER_HOST=
+SERVER_PORT=8000
+SERVER_WORKERS=1
+SERVER_WORKER_CLASS=uvicorn.workers.UvicornWorker
+SERVER_RELOAD=False
 
 # Database
 DB_USER=postgres
 DB_PASS=root
-DB_NAME=task_service
+DB_NAME=task_service_dev
+DB_HOST=db
 DB_PORT=5432
 
-# Redis
-REDIS_PASS=root
+# Redis — separate logical DBs per concern
+REDIS_HOST=redis
 REDIS_PORT=6379
+REDIS_PASS=root
+REDIS_DB=0                 # general cache / sessions
+REDIS_RATE_LIMIT_DB=1      # SlowAPI rate limiting
+REDIS_QUEUE_DB=2           # Celery result backend
+REDIS_STATS_DB=3           # internal stats
 
-# JWT
-JWT_SECRET=your_secret_key
-JWT_ALGORITHM=HS256
+# RabbitMQ — Celery broker
+RABBITMQ_USER=user
+RABBITMQ_PASSWORD=changeme
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_PORT=5672
+
+# Flower — dashboard basic auth
+FLOWER_USER=admin
+FLOWER_PASSWORD=changeme
+
+# SMTP — outgoing email (sent via the send_email Celery task)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+
+# JWT (RSA-signed access/refresh tokens)
+ACCESS_TOKEN_ALGORITHM=RS256
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_ALGORITHM=RS256
+REFRESH_TOKEN_EXPIRE_DAYS=30
 
 # Sentry
 SENTRY_DSN=your_sentry_dsn
@@ -348,13 +562,16 @@ SENTRY_DSN=your_sentry_dsn
 GRAFANA_USERNAME=admin
 GRAFANA_PASSWORD=admin
 
-# Server
-SERVER_PORT=8000
+# PgAdmin
+PGADMIN_EMAIL=
+PGADMIN_PASS=
 
 # Rate Limiting
-RATE_LIMIT_REQUESTS=10
-RATE_LIMIT_PERIOD=60
+STANDARD_TASK_COUNT_LIMIT=50
+VIP_TASK_COUNT_LIMIT=500
 ```
+
+> See `.env.example` in the repo root for the full, authoritative list of variables (including CORS and token audience settings).
 
 ### Application Settings (app/common/config.py)
 
@@ -447,7 +664,7 @@ exclude_lines = [
 
 **Access:** https://sentry.io
 
-### Logs — Loguru + Loki (planned)
+### Logs — Loguru + Promtail + Loki
 
 **Log levels:**
 - `DEBUG` — Development details (console only)
@@ -463,6 +680,8 @@ exclude_lines = [
 **Log files:**
 - `logs/app.log` — Human-readable logs
 - `logs/app.json` — JSON structured logs for Loki
+
+**Celery logs:** worker and beat containers log to stdout (`docker compose logs -f celery_worker` / `celery_beat`), and task-level state (success, failure, retries) is additionally visible in real time through the [Flower dashboard](#-background-tasks-celery).
 
 ## 🔄 CI/CD Pipeline
 
