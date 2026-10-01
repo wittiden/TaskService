@@ -2,12 +2,15 @@ FROM python:3.14-slim
 
 WORKDIR /app
 
-COPY requirements-prod.txt .
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN pip install -r requirements-prod.txt --no-cache-dir
+COPY pyproject.toml .
+COPY uv.lock .
+
+RUN uv sync --frozen --no-dev
 
 COPY . .
 
 EXPOSE 8000
 
-CMD ["python", "-m", "app.main", "--uvicorn"]
+CMD ["uv", "run", "python", "-m", "app.main", "--uvicorn"]

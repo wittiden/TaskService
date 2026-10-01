@@ -13,8 +13,6 @@ services:
     stop_grace_period: 30s
     networks:
       - network
-    volumes:
-      - .:/app
     depends_on:
       db:
         condition: service_healthy
@@ -36,7 +34,7 @@ services:
           target: .
           path: /app
         - action: rebuild
-          path: requirements-prod.txt
+          path: pyproject.toml
 
   db:
     image: postgres:16-alpine
